@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Terjadi kendala — Etalase')</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('css/formal.css') }}">
     <style>
@@ -13,15 +16,18 @@
         }
         .error-card {
             background: var(--white);
-            border: 1px solid #c8ced3;
-            box-shadow: 0 14px 38px rgba(28, 41, 52, .07);
+            border: 1px solid rgba(20, 22, 31, .07);
+            border-radius: 26px;
+            box-shadow: var(--shadow-lg);
             overflow: hidden;
         }
         .error-card .section-code {
             display: block;
+            margin: 0;
             padding: 15px 26px;
-            color: #e8edf0;
-            background: #13293d;
+            color: #eef0fb;
+            background: linear-gradient(90deg, #0b0d17, #1a2fa8);
+            border-radius: 0;
             letter-spacing: .11em;
         }
         .error-body {
@@ -29,20 +35,20 @@
         }
         .error-code {
             margin: 0;
-            color: var(--blue);
-            font-family: Georgia, "Times New Roman", serif;
             font-size: clamp(72px, 12vw, 128px);
-            font-weight: 400;
+            font-weight: 800;
             line-height: 1;
             letter-spacing: -.045em;
+            background: linear-gradient(120deg, var(--blue), #7b5cff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .error-body h1 {
             max-width: 520px;
             margin: 18px 0 14px;
-            color: var(--blue);
-            font-family: Georgia, "Times New Roman", serif;
             font-size: clamp(24px, 3.4vw, 34px);
-            font-weight: 400;
+            font-weight: 800;
             line-height: 1.15;
             letter-spacing: -.02em;
         }
@@ -64,7 +70,6 @@
             padding-top: 20px;
             color: var(--gray);
             border-top: 1px solid var(--line);
-            font-family: "Courier New", monospace;
             font-size: 10px;
             line-height: 1.7;
             letter-spacing: .04em;
@@ -79,6 +84,10 @@
     </style>
 </head>
 <body class="error-page">
+    <div class="scene-orbs" aria-hidden="true">
+        <i></i><i></i><i></i><i></i>
+    </div>
+
     <header class="site-header">
         <a class="brand" href="{{ route('home') }}" aria-label="Etalase, halaman katalog">
             <span class="brand-mark" aria-hidden="true">E</span>
