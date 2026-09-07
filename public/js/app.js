@@ -61,4 +61,53 @@ document.addEventListener('DOMContentLoaded', () => {
             heroProduct.style.transform = '';
         });
     }
+
+    // 4. Banner carousel
+    const carousel = document.querySelector('.banner-carousel');
+    if (carousel) {
+        const slides = Array.from(carousel.querySelectorAll('.banner-slide'));
+        const dots = Array.from(carousel.querySelectorAll('.banner-dots button'));
+        const prev = carousel.querySelector('.banner-prev');
+        const next = carousel.querySelector('.banner-next');
+        let current = 0;
+        let timer = null;
+
+        const show = (index) => {
+            current = (index + slides.length) % slides.length;
+            slides.forEach((slide, i) => slide.classList.toggle('is-active', i === current));
+            dots.forEach((dot, i) => dot.classList.toggle('is-active', i === current));
+        };
+
+        const restart = () => {
+            clearInterval(timer);
+            timer = setInterval(() => show(current + 1), 5000);
+        };
+
+        prev.addEventListener('click', () => { show(current - 1); restart(); });
+        next.addEventListener('click', () => { show(current + 1); restart(); });
+        dots.forEach((dot, i) => dot.addEventListener('click', () => { show(i); restart(); }));
+        carousel.addEventListener('mouseenter', () => clearInterval(timer));
+        carousel.addEventListener('mouseleave', restart);
+
+        restart();
+    }
+
+    // 5. Hot deal countdown
+    const countdown = document.querySelector('.countdown');
+    if (countdown) {
+        const deadline = new Date(countdown.dataset.deadline).getTime();
+        const units = ['days', 'hours', 'minutes', 'seconds'].map((unit) => countdown.querySelector(`[data-unit="${unit}"]`));
+
+        const tick = () => {
+            const remaining = Math.max(0, deadline - Date.now());
+            const totalSeconds = Math.floor(remaining / 1000);
+            units[0].textContent = String(Math.floor(totalSeconds / 86400)).padStart(2, '0');
+            units[1].textContent = String(Math.floor(totalSeconds / 3600) % 24).padStart(2, '0');
+            units[2].textContent = String(Math.floor(totalSeconds / 60) % 60).padStart(2, '0');
+            units[3].textContent = String(totalSeconds % 60).padStart(2, '0');
+        };
+
+        tick();
+        setInterval(tick, 1000);
+    }
 });

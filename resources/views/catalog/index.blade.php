@@ -8,6 +8,61 @@
     <span>COD dan transfer bank</span>
 </div>
 
+@php
+    $banners = [
+        [
+            'code' => 'PROMO PENGIRIMAN',
+            'title' => 'Gratis ongkir mulai Rp300.000',
+            'subtitle' => 'Berlaku untuk semua produk di katalog. Bisa COD atau transfer bank.',
+            'cta' => 'Lihat katalog',
+            'image' => 'images/products/tas-lipat.jpg',
+            'link' => '#catalog',
+        ],
+        [
+            'code' => 'KATEGORI KERJA',
+            'title' => 'Rapikan meja kerja Anda',
+            'subtitle' => 'Dudukan laptop, notebook grid, dan organizer kabel siap dipakai.',
+            'cta' => 'Jelajahi kategori',
+            'image' => 'images/products/dudukan-laptop.jpg',
+            'link' => route('home', ['category' => 'kerja']),
+        ],
+        [
+            'code' => 'SIAP DIKIRIM',
+            'title' => 'Hadiah siap kirim bulan ini',
+            'subtitle' => 'Paket kopi drip dan lilin aromaterapi pilihan untuk kiriman.',
+            'cta' => 'Lihat hadiah',
+            'image' => 'images/products/kopi.jpg',
+            'link' => route('home', ['category' => 'hadiah']),
+        ],
+    ];
+
+    $hotDealEndsAt = now()->endOfMonth()->setTime(23, 59, 59);
+@endphp
+
+@if (! request('q') && ! request('category'))
+    <section class="banner-carousel" aria-label="Banner promo">
+        <div class="banner-track">
+            @foreach ($banners as $index => $banner)
+                <a class="banner-slide {{ $index === 0 ? 'is-active' : '' }}" href="{{ $banner['link'] }}" style="background-image: linear-gradient(92deg, rgba(11, 13, 23, .93) 4%, rgba(26, 47, 168, .62) 48%, rgba(26, 47, 168, 0) 78%), url('{{ asset($banner['image']) }}')">
+                    <div class="banner-copy">
+                        <span class="section-code">{{ $banner['code'] }}</span>
+                        <strong>{{ $banner['title'] }}</strong>
+                        <small>{{ $banner['subtitle'] }}</small>
+                        <span class="banner-cta">{{ $banner['cta'] }}</span>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+        <button class="banner-nav banner-prev" type="button" aria-label="Banner sebelumnya">&lsaquo;</button>
+        <button class="banner-nav banner-next" type="button" aria-label="Banner berikutnya">&rsaquo;</button>
+        <div class="banner-dots">
+            @foreach ($banners as $index => $banner)
+                <button type="button" aria-label="Ke banner {{ $index + 1 }}" class="{{ $index === 0 ? 'is-active' : '' }}"></button>
+            @endforeach
+        </div>
+    </section>
+@endif
+
 @if (! request('q') && ! request('category') && $heroProduct)
     <section class="storefront-hero">
         <div class="hero-copy">
@@ -64,6 +119,47 @@
             </div>
         </section>
     @endif
+
+    <section class="home-section hot-deal-section">
+        <header class="home-section-heading">
+            <div><span class="section-code">HOT DEAL</span><h2>Promo akhir bulan</h2></div>
+            <span>Berakhir {{ $hotDealEndsAt->translatedFormat('j F Y') }}</span>
+        </header>
+        <div class="hot-deal">
+            <div class="hot-deal-copy">
+                <h3>Penawaran berakhir dalam</h3>
+                <div class="countdown" data-deadline="{{ $hotDealEndsAt->toIso8601String() }}">
+                    <div class="count-unit"><strong data-unit="days">00</strong><span>Hari</span></div>
+                    <div class="count-unit"><strong data-unit="hours">00</strong><span>Jam</span></div>
+                    <div class="count-unit"><strong data-unit="minutes">00</strong><span>Menit</span></div>
+                    <div class="count-unit"><strong data-unit="seconds">00</strong><span>Detik</span></div>
+                </div>
+                <p class="hot-deal-note">Berlaku sampai {{ $hotDealEndsAt->translatedFormat('j F Y') }} atau selama stok masih tersedia.</p>
+                <a class="secondary-button button-link fit" href="#catalog">Belanja sekarang</a>
+            </div>
+            <div class="hot-deal-products">
+                @foreach ($featuredProducts->take(3) as $product)
+                    <a class="deal-product" href="{{ route('products.show', $product) }}">
+                        <span class="deal-visual" aria-hidden="true">
+                            @if ($product->image_url)
+                                <img src="{{ $product->image_url }}" alt="">
+                            @else
+                                <b>{{ strtoupper(substr($product->category->name, 0, 2)) }}</b>
+                            @endif
+                        </span>
+                        <span class="deal-identity">
+                            <small>{{ $product->category->name }}</small>
+                            <strong>{{ $product->name }}</strong>
+                            <span class="deal-meta">
+                                <b>Rp{{ number_format($product->price, 0, ',', '.') }}</b>
+                                <span @class(['out-of-stock' => $product->stock === 0])>{{ $product->stock > 0 ? $product->stock.' stok' : 'Habis' }}</span>
+                            </span>
+                        </span>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    </section>
 @endif
 
 <section class="catalog-area" id="catalog">
