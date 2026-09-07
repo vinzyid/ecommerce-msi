@@ -110,4 +110,15 @@ document.addEventListener('DOMContentLoaded', () => {
         tick();
         setInterval(tick, 1000);
     }
+
+    // 6. Newsletter (UI only, belum ada backend)
+    const newsletterForm = document.querySelector('[data-newsletter]');
+    if (newsletterForm) {
+        const message = newsletterForm.querySelector('[data-newsletter-message]');
+        newsletterForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            newsletterForm.querySelector('button').disabled = true;
+            message.hidden = false;
+        });
+    }
 });

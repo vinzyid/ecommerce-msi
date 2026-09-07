@@ -49,8 +49,52 @@
     </main>
 
     <footer class="site-footer">
-        <span>ETALASE &bull; MODERN LIFESTYLE COMMERCE</span>
-        <span>Dikembangkan oleh Rafi Pandya P &copy; {{ now()->year }}</span>
+        <div class="footer-columns">
+            <div class="footer-brand">
+                <a class="brand" href="{{ route('home') }}" aria-label="Etalase, halaman katalog">
+                    <span class="brand-mark" aria-hidden="true">E</span>
+                    <span class="brand-name">ETALASE</span>
+                </a>
+                <p>Kebutuhan rumah dan meja kerja, dikirim dari gudang kami ke alamat Anda.</p>
+                <ul class="footer-contact">
+                    <li><b>Kota</b><span>Bandung, Jawa Barat</span></li>
+                    <li><b>Telepon</b><a href="tel:+6281234567890">+62 812-3456-7890</a></li>
+                    <li><b>Email</b><a href="mailto:halo@etalase.test">halo@etalase.test</a></li>
+                </ul>
+            </div>
+
+            <nav class="footer-links" aria-label="Kategori produk">
+                <h3>Kategori</h3>
+                @foreach ($footerCategories as $category)
+                    <a href="{{ route('home', ['category' => $category->slug]) }}">{{ $category->name }}</a>
+                @endforeach
+            </nav>
+
+            <div class="footer-links">
+                <h3>Pembayaran</h3>
+                <span class="footer-badge">COD</span>
+                <span class="footer-badge">Transfer Bank</span>
+                <p class="footer-note">Pilih metode pembayaran saat checkout.</p>
+            </div>
+
+            <div class="footer-newsletter">
+                <h3>Newsletter</h3>
+                <p>Dapatkan info produk baru dan promo.</p>
+                <form class="newsletter-form" data-newsletter>
+                    <label for="newsletter-email">Alamat email</label>
+                    <div>
+                        <input id="newsletter-email" type="email" placeholder="nama@email.com" required>
+                        <button type="submit">Kirim</button>
+                    </div>
+                    <small class="newsletter-message" data-newsletter-message hidden>Fitur segera hadir. Terima kasih sudah mendaftar!</small>
+                </form>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>ETALASE &bull; MODERN LIFESTYLE COMMERCE</span>
+            <span>Dikembangkan oleh Rafi Pandya P &copy; {{ now()->year }}</span>
+        </div>
     </footer>
 
     <script src="{{ asset('js/app.js') }}" defer></script>
