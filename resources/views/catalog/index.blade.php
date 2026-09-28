@@ -1,190 +1,111 @@
 @extends('layouts.app')
 
-@section('title', 'Etalase — Toko Kebutuhan Rumah dan Kerja')
+@section('title', 'NADI Market — Perlengkapan Rumah dan Meja Kerja')
 
 @section('content')
-<div class="store-notice">
-    <span>Gratis ongkir untuk pesanan mulai Rp300.000</span>
-    <span>COD dan transfer bank</span>
-</div>
-
 @php
-    $banners = [
-        [
-            'code' => 'PROMO PENGIRIMAN',
-            'title' => 'Gratis ongkir mulai Rp300.000',
-            'subtitle' => 'Berlaku untuk semua produk di katalog. Bisa COD atau transfer bank.',
-            'cta' => 'Lihat katalog',
-            'image' => 'images/products/tas-lipat.jpg',
-            'link' => '#catalog',
-        ],
-        [
-            'code' => 'KATEGORI KERJA',
-            'title' => 'Rapikan meja kerja Anda',
-            'subtitle' => 'Dudukan laptop, notebook grid, dan organizer kabel siap dipakai.',
-            'cta' => 'Jelajahi kategori',
-            'image' => 'images/products/dudukan-laptop.jpg',
-            'link' => route('home', ['category' => 'kerja']),
-        ],
-        [
-            'code' => 'SIAP DIKIRIM',
-            'title' => 'Hadiah siap kirim bulan ini',
-            'subtitle' => 'Paket kopi drip dan lilin aromaterapi pilihan untuk kiriman.',
-            'cta' => 'Lihat hadiah',
-            'image' => 'images/products/kopi.jpg',
-            'link' => route('home', ['category' => 'hadiah']),
-        ],
+    $hasFilter = request('q') || request('category');
+    $trustItems = [
+        ['icon' => 'i-truck', 'title' => 'Pengiriman Cepat', 'text' => 'Kurir khusus dan terlacak'],
+        ['icon' => 'i-lock', 'title' => 'Pembayaran Aman', 'text' => 'COD dan transfer bank'],
+        ['icon' => 'i-package', 'title' => 'Stok Akurat', 'text' => 'Diperbarui setiap hari'],
+        ['icon' => 'i-refresh', 'title' => 'Produk Terkurasi', 'text' => 'Dipilih dari koleksi pilihan'],
     ];
-
-    $hotDealEndsAt = now()->endOfMonth()->setTime(23, 59, 59);
 @endphp
 
-@if (! request('q') && ! request('category'))
-    <section class="banner-carousel" aria-label="Banner promo">
-        <div class="banner-track">
-            @foreach ($banners as $index => $banner)
-                <a class="banner-slide {{ $index === 0 ? 'is-active' : '' }}" href="{{ $banner['link'] }}" style="background-image: linear-gradient(92deg, rgba(11, 13, 23, .93) 4%, rgba(26, 47, 168, .62) 48%, rgba(26, 47, 168, 0) 78%), url('{{ asset($banner['image']) }}')">
-                    <div class="banner-copy">
-                        <span class="section-code">{{ $banner['code'] }}</span>
-                        <strong>{{ $banner['title'] }}</strong>
-                        <small>{{ $banner['subtitle'] }}</small>
-                        <span class="banner-cta">{{ $banner['cta'] }}</span>
-                    </div>
-                </a>
-            @endforeach
-        </div>
-        <button class="banner-nav banner-prev" type="button" aria-label="Banner sebelumnya">&lsaquo;</button>
-        <button class="banner-nav banner-next" type="button" aria-label="Banner berikutnya">&rsaquo;</button>
-        <div class="banner-dots">
-            @foreach ($banners as $index => $banner)
-                <button type="button" aria-label="Ke banner {{ $index + 1 }}" class="{{ $index === 0 ? 'is-active' : '' }}"></button>
-            @endforeach
-        </div>
-    </section>
-@endif
+<section class="notice-bar">
+    <span>Gratis ongkir untuk pesanan mulai Rp300.000</span>
+    <span>COD dan transfer bank</span>
+</section>
 
-@if (! request('q') && ! request('category') && $heroProduct)
-    <section class="storefront-hero">
+@if (! $hasFilter)
+    <section class="hero">
         <div class="hero-copy">
             <span class="section-code">KOLEKSI PILIHAN / {{ now()->year }}</span>
-            <h1>Kebutuhan rumah dan meja kerja.</h1>
-            <p>Temukan perlengkapan yang tersedia di gudang. Harga dan jumlah stok diperbarui dari katalog.</p>
+            <h1>Lengkapi rumah dan meja kerja impian Anda.</h1>
+            <p>Temukan perlengkapan rumah, meja kerja, dan kebutuhan harian dengan desain yang rapi untuk menciptakan ruang terbaik.</p>
             <div class="hero-actions">
-                <a class="primary-button button-link fit" href="#catalog">Lihat katalog</a>
-                <a class="hero-text-link" href="{{ route('products.show', $heroProduct) }}">Lihat produk pilihan</a>
+                <a class="primary-button button-link" href="#katalog">Lihat Produk <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+                <a class="secondary-button button-link" href="{{ route('categories.index') }}">Kategori</a>
+            </div>
+
+            <div class="hero-trust">
+                @foreach ($trustItems as $item)
+                    <div class="hero-trust-item">
+                        <svg class="icon" aria-hidden="true"><use href="#{{ $item['icon'] }}"/></svg>
+                        <span><strong>{{ $item['title'] }}</strong><small>{{ $item['text'] }}</small></span>
+                    </div>
+                @endforeach
             </div>
         </div>
-        <a class="hero-product" href="{{ route('products.show', $heroProduct) }}">
-            <img src="{{ $heroProduct->image_url }}" alt="{{ $heroProduct->name }}">
-            <span class="hero-product-label">
-                <small>{{ $heroProduct->category->name }}</small>
-                <strong>{{ $heroProduct->name }}</strong>
-                <b>Rp{{ number_format($heroProduct->price, 0, ',', '.') }}</b>
-            </span>
-        </a>
-    </section>
 
-    <section class="service-strip" aria-label="Informasi layanan">
-        <div><b>01</b><span><strong>Stok tercatat</strong><small>Jumlah diperiksa saat checkout</small></span></div>
-        <div><b>02</b><span><strong>Dua metode pembayaran</strong><small>COD atau transfer bank</small></span></div>
-        <div><b>03</b><span><strong>Riwayat pesanan</strong><small>Status tersimpan di akun</small></span></div>
+        @if ($heroProduct)
+            <a class="hero-visual" href="{{ route('products.show', $heroProduct) }}">
+                @if ($heroProduct->image_url)
+                    <img src="{{ $heroProduct->image_url }}" alt="{{ $heroProduct->name }}">
+                @else
+                    <span class="hero-visual-mark">{{ strtoupper(substr($heroProduct->name, 0, 1)) }}</span>
+                @endif
+                <span class="hero-chip">
+                    <span class="hero-chip-visual">
+                        @if ($heroProduct->image_url)
+                            <img src="{{ $heroProduct->image_url }}" alt="">
+                        @endif
+                    </span>
+                    <span class="hero-chip-body">
+                        <small>{{ $heroProduct->category->name }}</small>
+                        <strong>{{ $heroProduct->name }}</strong>
+                        <b>Rp{{ number_format($heroProduct->price, 0, ',', '.') }}</b>
+                    </span>
+                    <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+                </span>
+            </a>
+        @endif
     </section>
 
     <section class="home-section category-section">
         <header class="home-section-heading">
-            <div><span class="section-code">DEPARTEMEN</span><h2>Belanja menurut kategori</h2></div>
-            <span>{{ $categories->count() }} kategori</span>
+            <div><span class="section-code">KATEGORI</span><h2>Belanja berdasarkan kebutuhan</h2></div>
+            <a href="{{ route('categories.index') }}">Lihat semua kategori</a>
         </header>
-        <div class="home-categories">
-            @foreach ($categories as $index => $category)
+        <div class="category-tiles">
+            @php
+                $categoryTaglines = [
+                    'kebutuhan-harian' => 'Perlengkapan yang dipakai tiap hari',
+                    'rumah' => 'Rapikan dapur dan ruang tinggal',
+                    'kerja' => 'Dukung aktivitas meja kerja',
+                    'hadiah' => 'Siap diberikan kapan saja',
+                ];
+            @endphp
+            @foreach ($categories as $category)
                 <a href="{{ route('home', ['category' => $category->slug]) }}">
-                    <small>{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</small>
+                    <span class="category-tile-icon" aria-hidden="true">
+                        <svg class="icon"><use href="#i-layers"/></svg>
+                    </span>
                     <strong>{{ $category->name }}</strong>
-                    <span>{{ $category->products_count }} produk</span>
+                    <small>{{ $categoryTaglines[$category->slug] ?? $category->description }}</small>
+                    <span class="category-tile-count">{{ $category->products_count }} produk</span>
+                    <span class="category-tile-link">Jelajahi <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
                 </a>
             @endforeach
         </div>
     </section>
-
-    @if ($featuredProducts->isNotEmpty())
-        <section class="home-section featured-section">
-            <header class="home-section-heading">
-                <div><span class="section-code">REKOMENDASI</span><h2>Produk pilihan</h2></div>
-                <a href="#catalog">Lihat semua produk</a>
-            </header>
-            <div class="product-grid featured-grid">
-                @foreach ($featuredProducts as $product)
-                    @include('components.product-card', ['product' => $product])
-                @endforeach
-            </div>
-        </section>
-    @endif
-
-    <section class="home-section hot-deal-section">
-        <header class="home-section-heading">
-            <div><span class="section-code">HOT DEAL</span><h2>Promo akhir bulan</h2></div>
-            <span>Berakhir {{ $hotDealEndsAt->translatedFormat('j F Y') }}</span>
-        </header>
-        <div class="hot-deal">
-            <div class="hot-deal-copy">
-                <h3>Penawaran berakhir dalam</h3>
-                <div class="countdown" data-deadline="{{ $hotDealEndsAt->toIso8601String() }}">
-                    <div class="count-unit"><strong data-unit="days">00</strong><span>Hari</span></div>
-                    <div class="count-unit"><strong data-unit="hours">00</strong><span>Jam</span></div>
-                    <div class="count-unit"><strong data-unit="minutes">00</strong><span>Menit</span></div>
-                    <div class="count-unit"><strong data-unit="seconds">00</strong><span>Detik</span></div>
-                </div>
-                <p class="hot-deal-note">Berlaku sampai {{ $hotDealEndsAt->translatedFormat('j F Y') }} atau selama stok masih tersedia.</p>
-                <a class="secondary-button button-link fit" href="#catalog">Belanja sekarang</a>
-            </div>
-            <div class="hot-deal-products">
-                @foreach ($featuredProducts->take(3) as $product)
-                    <a class="deal-product" href="{{ route('products.show', $product) }}">
-                        <span class="deal-visual" aria-hidden="true">
-                            @if ($product->image_url)
-                                <img src="{{ $product->image_url }}" alt="">
-                            @else
-                                <b>{{ strtoupper(substr($product->category->name, 0, 2)) }}</b>
-                            @endif
-                        </span>
-                        <span class="deal-identity">
-                            <small>{{ $product->category->name }}</small>
-                            <strong>{{ $product->name }}</strong>
-                            <span class="deal-meta">
-                                <b>Rp{{ number_format($product->price, 0, ',', '.') }}</b>
-                                <span @class(['out-of-stock' => $product->stock === 0])>{{ $product->stock > 0 ? $product->stock.' stok' : 'Habis' }}</span>
-                            </span>
-                        </span>
-                    </a>
-                @endforeach
-            </div>
-        </div>
-    </section>
 @endif
 
-<section class="catalog-area" id="catalog">
-    <header class="catalog-title">
+<section class="home-section featured-section" id="katalog">
+    <header class="home-section-heading">
         <div>
-            <span class="section-code">KATALOG / {{ str_pad($products->total(), 2, '0', STR_PAD_LEFT) }} PRODUK</span>
-            <h2>{{ request('q') || request('category') ? 'Hasil pencarian' : 'Semua produk' }}</h2>
+            <span class="section-code">{{ $hasFilter ? 'HASIL PENCARIAN' : 'PRODUK PILIHAN' }}</span>
+            <h2>{{ $hasFilter ? 'Hasil pencarian' : 'Produk pilihan' }}</h2>
         </div>
-        @if (request('q') || request('category'))
-            <a class="text-link" href="{{ route('home') }}">Hapus filter</a>
+        @if ($hasFilter)
+            <a href="{{ route('home') }}">Hapus filter</a>
+        @else
+            <span>{{ $products->total() }} produk tersedia</span>
         @endif
     </header>
 
-    <section class="catalog-tools" aria-label="Pencarian dan filter produk">
-        <form class="search-form" method="GET" action="{{ route('home') }}">
-            <label for="q">Cari produk</label>
-            <div>
-                <input id="q" name="q" type="search" value="{{ request('q') }}" placeholder="Nama, SKU, atau deskripsi">
-                @if (request('category'))
-                    <input type="hidden" name="category" value="{{ request('category') }}">
-                @endif
-                <button type="submit">Cari</button>
-            </div>
-        </form>
-
+    @if ($hasFilter)
         <nav class="category-filter" aria-label="Filter kategori">
             <a href="{{ route('home', array_filter(['q' => request('q')])) }}" @class(['active' => ! request('category')])>Semua</a>
             @foreach ($categories as $category)
@@ -193,9 +114,9 @@
                 </a>
             @endforeach
         </nav>
-    </section>
+    @endif
 
-    <section class="product-grid" aria-label="Daftar produk">
+    <div class="product-grid">
         @forelse ($products as $product)
             @include('components.product-card', ['product' => $product])
         @empty
@@ -205,7 +126,7 @@
                 <a class="text-link" href="{{ route('home') }}">Lihat semua produk</a>
             </div>
         @endforelse
-    </section>
+    </div>
 
     @if ($products->hasPages())
         <nav class="pagination" aria-label="Navigasi halaman">
@@ -215,4 +136,20 @@
         </nav>
     @endif
 </section>
+
+@if (! $hasFilter)
+    <section class="home-section service-section">
+        <header class="home-section-heading">
+            <div><span class="section-code">LAYANAN</span><h2>Kenapa belanja di NADI Market</h2></div>
+        </header>
+        <div class="service-strip">
+            @foreach ($trustItems as $index => $item)
+                <div>
+                    <b>{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</b>
+                    <span><strong>{{ $item['title'] }}</strong><small>{{ $item['text'] }}</small></span>
+                </div>
+            @endforeach
+        </div>
+    </section>
+@endif
 @endsection

@@ -10,12 +10,11 @@
         <h1 id="login-heading">Masuk ke akun Anda.</h1>
         <p>Gunakan email atau username yang terdaftar.</p>
 
-        <div class="category-list" aria-label="Kategori toko">
-            <span>Kebutuhan harian</span>
-            <span>Rumah</span>
-            <span>Kerja</span>
-            <span>Hadiah</span>
-        </div>
+        <ul class="benefit-list" aria-label="Keuntungan akun">
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Belanja lebih cepat tanpa isi ulang data</li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Lacak pesanan dan status pengiriman</li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Simpan produk favorit di wishlist</li>
+        </ul>
     </section>
 
     <section class="form-panel" aria-labelledby="form-heading">

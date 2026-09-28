@@ -75,10 +75,18 @@ class ProductController extends Controller
             'sku' => ['required', 'string', 'max:50', Rule::unique('products')->ignore($product)],
             'description' => 'required|string|max:3000',
             'price' => 'required|numeric|min:0|max:9999999999',
+            'compare_at_price' => 'nullable|numeric|min:0|max:9999999999|gte:price',
+            'badge' => 'nullable|string|max:30',
+            'weight_grams' => 'nullable|integer|min:0|max:1000000',
+            'material' => 'nullable|string|max:100',
+            'color' => 'nullable|string|max:60',
+            'dimensions' => 'nullable|string|max:80',
             'stock' => 'required|integer|min:0|max:1000000',
             'image_url' => ['nullable', 'string', 'max:500', 'regex:/^(https?:\\/\\/|\\/images\\/)[^\\s]+$/'],
             'is_active' => 'nullable|boolean',
             'is_featured' => 'nullable|boolean',
+        ], [
+            'compare_at_price.gte' => 'Harga sebelum diskon harus lebih besar atau sama dengan harga jual.',
         ]);
     }
 

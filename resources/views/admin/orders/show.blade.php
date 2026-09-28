@@ -31,6 +31,9 @@
             @endforeach
             <dl class="order-totals">
                 <div><dt>Subtotal</dt><dd>Rp{{ number_format($order->subtotal, 0, ',', '.') }}</dd></div>
+                @if ((int) $order->discount > 0)
+                    <div><dt>Diskon {{ $order->voucher_code }}</dt><dd>-Rp{{ number_format($order->discount, 0, ',', '.') }}</dd></div>
+                @endif
                 <div><dt>Ongkir</dt><dd>Rp{{ number_format($order->shipping_cost, 0, ',', '.') }}</dd></div>
                 <div><dt>Total</dt><dd>Rp{{ number_format($order->total, 0, ',', '.') }}</dd></div>
             </dl>
@@ -41,7 +44,8 @@
                 <div><dt>Akun</dt><dd>{{ $order->user->username }} / {{ $order->user->email }}</dd></div>
                 <div><dt>Penerima</dt><dd>{{ $order->customer_name }}</dd></div>
                 <div><dt>Telepon</dt><dd>{{ $order->phone }}</dd></div>
-                <div><dt>Alamat</dt><dd>{{ $order->address }}</dd></div>
+                <div><dt>Alamat</dt><dd>{{ $order->fullAddress() }}</dd></div>
+                <div><dt>Pengiriman</dt><dd>{{ \App\Support\CartCalculator::shippingLabel($order->shipping_method ?? 'regular') }}</dd></div>
                 <div><dt>Pembayaran</dt><dd>{{ $order->paymentLabel() }}</dd></div>
                 @if ($order->notes)<div><dt>Catatan</dt><dd>{{ $order->notes }}</dd></div>@endif
             </dl>

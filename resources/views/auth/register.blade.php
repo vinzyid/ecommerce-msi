@@ -10,12 +10,11 @@
         <h1 id="register-heading">Buat akun untuk mulai belanja.</h1>
         <p>Setelah mendaftar, Anda akan langsung masuk ke halaman akun.</p>
 
-        <div class="category-list" aria-label="Kategori toko">
-            <span>Kebutuhan harian</span>
-            <span>Rumah</span>
-            <span>Kerja</span>
-            <span>Hadiah</span>
-        </div>
+        <ul class="benefit-list" aria-label="Keuntungan akun">
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Gratis dan mudah didaftarkan</li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Promo eksklusif untuk pelanggan</li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg> Simpan alamat pengiriman</li>
+        </ul>
     </section>
 
     <section class="form-panel" aria-labelledby="form-heading">

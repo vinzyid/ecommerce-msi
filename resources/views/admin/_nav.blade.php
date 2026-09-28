@@ -15,4 +15,7 @@
     <a href="{{ route('admin.users.index') }}" @class(['active' => request()->routeIs('admin.users.*')])>
         <svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><span>Pengguna</span>
     </a>
+    <a href="{{ route('admin.vouchers.index') }}" @class(['active' => request()->routeIs('admin.vouchers.*')])>
+        <svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg><span>Voucher</span>
+    </a>
 </nav>

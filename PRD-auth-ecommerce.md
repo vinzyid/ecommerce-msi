@@ -1,8 +1,8 @@
-# PRD Website E-Commerce Etalase
+# PRD Website E-Commerce NADI Market
 
 ## 1. Tujuan
 
-Etalase merupakan aplikasi e-commerce untuk praktikum Aplikasi Web. Pengunjung dapat melihat produk. Pelanggan dapat membuat akun, mengelola cart, checkout, dan memeriksa pesanan. Admin mengelola kategori, produk, stok, serta status pesanan.
+NADI Market merupakan aplikasi e-commerce untuk praktikum Aplikasi Web. Pengunjung dapat melihat katalog, kategori, dan promo. Pelanggan dapat membuat akun, mengelola wishlist, cart, checkout, menulis ulasan, dan memeriksa pesanan. Admin mengelola kategori, produk, stok, voucher, pengguna, serta status pesanan.
 
 ## 2. Stack
 
@@ -19,17 +19,22 @@ Aplikasi tidak memakai Breeze, Jetstream, Fortify, SPA framework, atau payment g
 
 ### Pengunjung
 
-- Melihat katalog dan detail produk
-- Mencari produk
+- Melihat katalog, kategori, halaman promo, dan detail produk
+- Mencari produk dari header maupun katalog
 - Memfilter produk berdasarkan kategori
+- Membaca ulasan pembeli
 - Membuka halaman login dan registrasi
+- Membaca halaman tentang
 
 ### Pelanggan
 
 Pelanggan memiliki seluruh akses pengunjung, ditambah:
 
-- Menambah dan mengubah isi cart
-- Checkout
+- Mengelola wishlist
+- Menambah dan mengubah isi cart, termasuk menghapus seluruh isi cart
+- Memakai kode promo pada cart
+- Checkout dengan alamat dan metode pengiriman lengkap
+- Menulis serta mengubah ulasan produk
 - Melihat daftar serta detail pesanannya
 - Melihat profil, statistik belanja, dan riwayat pesanan di halaman akun
 - Keluar dari akun
@@ -38,10 +43,11 @@ Pelanggan memiliki seluruh akses pengunjung, ditambah:
 
 Admin memiliki seluruh akses pelanggan, ditambah:
 
-- Melihat ringkasan toko
+- Melihat ringkasan toko beserta grafik
 - Membuat dan mengubah kategori
-- Membuat, mengubah, dan menonaktifkan produk
+- Membuat, mengubah, dan menonaktifkan produk, termasuk harga promo dan atribut produk
 - Mengubah stok produk
+- Melihat dan mengelola pengguna serta perannya
 - Melihat semua pesanan
 - Mengubah status pesanan
 
@@ -84,10 +90,60 @@ Profil pengguna memakai avatar inisial yang dihitung dari username. Aplikasi tid
 | sku | varchar(50) | unik |
 | description | text | wajib |
 | price | decimal(12,2) | minimal 0 |
+| compare_at_price | decimal(12,2) | nullable, harga sebelum diskon |
+| badge | varchar(30) | nullable, label seperti Best Seller |
+| weight_grams | unsigned integer | nullable |
+| material | varchar(100) | nullable |
+| color | varchar(60) | nullable |
+| dimensions | varchar(80) | nullable |
 | stock | unsigned integer | minimal 0 |
 | image_url | varchar(500) | nullable |
 | is_active | boolean | default true |
 | is_featured | boolean | default false |
+| timestamps | timestamp | bawaan Laravel |
+
+Produk dianggap sedang diskon bila `compare_at_price` terisi dan lebih besar dari `price`.
+
+### reviews
+
+| Kolom | Tipe | Aturan |
+| --- | --- | --- |
+| id | bigint | primary key |
+| product_id | bigint | foreign key products, cascade delete |
+| user_id | bigint | foreign key users, cascade delete |
+| rating | tinyint | 1 sampai 5 |
+| comment | varchar(500) | nullable |
+| is_approved | boolean | default true |
+| timestamps | timestamp | bawaan Laravel |
+
+Pasangan `product_id` dan `user_id` unik sehingga satu pelanggan hanya punya satu ulasan per produk.
+
+### wishlists
+
+| Kolom | Tipe | Aturan |
+| --- | --- | --- |
+| id | bigint | primary key |
+| user_id | bigint | foreign key users, cascade delete |
+| product_id | bigint | foreign key products, cascade delete |
+| timestamps | timestamp | bawaan Laravel |
+
+Pasangan `user_id` dan `product_id` unik.
+
+### vouchers
+
+| Kolom | Tipe | Aturan |
+| --- | --- | --- |
+| id | bigint | primary key |
+| code | varchar(30) | unik |
+| description | varchar(150) | nullable |
+| type | varchar(20) | `percent` atau `fixed` |
+| value | unsigned integer | persen atau rupiah |
+| min_spend | unsigned integer | default 0 |
+| max_discount | unsigned integer | nullable, batas potongan |
+| usage_limit | unsigned integer | nullable |
+| used_count | unsigned integer | default 0 |
+| is_active | boolean | default true |
+| expires_at | timestamp | nullable |
 | timestamps | timestamp | bawaan Laravel |
 
 ### cart_items
@@ -112,11 +168,19 @@ Pasangan `user_id` dan `product_id` harus unik.
 | customer_name | varchar(100) | wajib |
 | phone | varchar(20) | wajib |
 | address | text | wajib |
+| province | varchar(80) | nullable |
+| city | varchar(80) | nullable |
+| district | varchar(80) | nullable |
+| postal_code | varchar(10) | nullable |
+| shipping_method | varchar(20) | `regular` atau `express` |
 | notes | varchar(500) | nullable |
 | payment_method | varchar(20) | `cod` atau `bank_transfer` |
+| voucher_id | bigint | nullable, foreign key vouchers |
+| voucher_code | varchar(30) | nullable, snapshot kode |
 | subtotal | decimal(12,2) | snapshot nilai cart |
-| shipping_cost | decimal(12,2) | Rp15.000, gratis mulai Rp300.000 |
-| total | decimal(12,2) | subtotal dan ongkir |
+| discount | unsigned integer | default 0 |
+| shipping_cost | decimal(12,2) | Rp15.000 reguler, Rp25.000 kilat, gratis mulai Rp300.000 |
+| total | decimal(12,2) | subtotal dikurangi diskon ditambah ongkir |
 | status | varchar(20) | status pesanan |
 | ordered_at | timestamp | waktu checkout |
 | timestamps | timestamp | bawaan Laravel |
@@ -165,12 +229,17 @@ Route publik:
 
 ```text
 GET /                         katalog
+GET /kategori                 daftar kategori
+GET /promo                    produk diskon dan kode promo
+GET /tentang                  informasi toko
 GET /products/{product:slug} detail produk
 ```
 
 Katalog hanya menampilkan kategori dan produk aktif. Query `q` mencari nama, SKU, dan deskripsi. Query `category` memfilter slug kategori. Setiap halaman memuat paling banyak 12 produk.
 
-Detail produk menampilkan nama, kategori, harga, stok, deskripsi, dan tombol tambah ke cart. Produk dengan stok nol tidak dapat masuk ke cart.
+Header menampilkan kolom pencarian yang mengirim ke katalog. Kartu produk menampilkan label diskon, label produk, rata-rata rating, jumlah ulasan, harga, harga sebelum diskon bila ada, dan sisa stok.
+
+Detail produk menampilkan galeri gambar, harga dan harga sebelum diskon, ringkasan rating, atribut produk (berat, material, warna, dimensi), tombol tambah ke cart, tombol beli sekarang, tombol wishlist, dan daftar ulasan. Produk dengan stok nol tidak dapat masuk ke cart.
 
 ## 7. Cart
 
@@ -179,8 +248,11 @@ Route cart memakai middleware `auth`:
 ```text
 GET    /cart
 POST   /cart
+DELETE /cart                 menghapus seluruh isi cart
 PATCH  /cart/{cartItem}
 DELETE /cart/{cartItem}
+POST   /voucher              memasang kode promo
+DELETE /voucher              menghapus kode promo
 ```
 
 - Cart tersimpan di database per pelanggan.
@@ -188,6 +260,26 @@ DELETE /cart/{cartItem}
 - Quantity tidak boleh melebihi stok.
 - Pelanggan hanya dapat mengubah item miliknya.
 - Total cart dihitung ulang dari harga produk. Aplikasi tidak mempercayai harga dari request.
+- Kode promo divalidasi keaktifan, masa berlaku, batas pemakaian, dan minimum belanja. Kode disimpan di session, bukan di form.
+- Ringkasan menampilkan subtotal, diskon, ongkos kirim, dan total.
+
+## 7.1 Wishlist
+
+```text
+GET    /wishlist
+POST   /wishlist/{product:slug}
+DELETE /wishlist/{product:slug}
+DELETE /wishlist             mengosongkan wishlist
+```
+
+## 7.2 Ulasan
+
+```text
+POST   /products/{product:slug}/reviews
+DELETE /reviews/{review}
+```
+
+Satu pelanggan hanya punya satu ulasan per produk. Mengirim ulasan baru memperbarui ulasan lama. Pelanggan hanya dapat menghapus ulasannya sendiri, admin dapat menghapus semua.
 
 ## 8. Checkout
 
@@ -198,17 +290,21 @@ GET  /checkout
 POST /checkout
 ```
 
-Input: nama penerima, nomor telepon, alamat, catatan opsional, dan metode pembayaran.
+Input: nama penerima, nomor telepon, alamat, provinsi, kota, kecamatan, kode pos, metode pengiriman, catatan opsional, dan metode pembayaran.
 
 Checkout berjalan dalam transaksi database:
 
 1. Sistem mengunci baris produk dengan `lockForUpdate()`.
 2. Sistem memeriksa ulang status produk dan stok.
-3. Sistem membuat order serta snapshot order item.
-4. Sistem mengurangi stok.
-5. Sistem menghapus cart.
+3. Sistem memvalidasi kode promo dan menghitung diskon.
+4. Sistem membuat order serta snapshot order item.
+5. Sistem mengurangi stok.
+6. Sistem menaikkan penghitung pemakaian voucher.
+7. Sistem menghapus cart.
 
 Jika stok berubah, transaksi dibatalkan dan pelanggan kembali ke cart dengan pesan kesalahan.
+
+Ongkos kirim: reguler Rp15.000 gratis mulai Rp300.000 setelah diskon, kilat Rp25.000.
 
 Aplikasi hanya mencatat pilihan transfer bank. Aplikasi belum menghubungi bank atau memverifikasi pembayaran.
 
@@ -274,9 +370,11 @@ Hindari headline puitis, glassmorphism, blob, serif miring, teks raksasa, ikon d
 
 Seeder membuat:
 
-- satu akun admin
+- satu akun admin dan tiga akun pelanggan
 - empat kategori
-- minimal delapan produk dengan variasi stok dan harga
+- belasan produk dengan variasi stok, harga, harga promo, label, dan atribut
+- ulasan contoh untuk setiap produk
+- tiga kode promo: `HEMAT10`, `GRATIS15`, dan `NADI25`
 
 Kredensial admin untuk development:
 
@@ -291,8 +389,10 @@ password: Admin123!
 - Pengunjung dapat mencari dan memfilter produk aktif.
 - Pelanggan dapat mendaftar serta login dengan email atau username.
 - Cart menolak quantity yang melebihi stok.
+- Kode promo yang tidak valid atau kedaluwarsa ditolak.
 - Checkout membuat snapshot item, mengurangi stok, dan membersihkan cart dalam satu transaksi.
 - Pelanggan tidak dapat membaca cart atau pesanan milik akun lain.
+- Pelanggan dapat mengelola wishlist dan menulis ulasan.
 - User biasa menerima HTTP 403 saat membuka `/admin`.
 - Admin dapat mengelola kategori, produk, stok, dan status pesanan.
 - Admin dapat mencari pengguna serta mengubah peran akun.

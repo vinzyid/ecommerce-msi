@@ -16,9 +16,17 @@ class Order extends Model
         'customer_name',
         'phone',
         'address',
+        'province',
+        'city',
+        'district',
+        'postal_code',
+        'shipping_method',
         'notes',
         'payment_method',
+        'voucher_id',
+        'voucher_code',
         'subtotal',
+        'discount',
         'shipping_cost',
         'total',
         'status',
@@ -29,6 +37,7 @@ class Order extends Model
     {
         return [
             'subtotal' => 'decimal:2',
+            'discount' => 'integer',
             'shipping_cost' => 'decimal:2',
             'total' => 'decimal:2',
             'ordered_at' => 'datetime',
@@ -38,6 +47,18 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function voucher(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class);
+    }
+
+    public function fullAddress(): string
+    {
+        return collect([$this->address, $this->district, $this->city, $this->province, $this->postal_code])
+            ->filter()
+            ->implode(', ');
     }
 
     public function items(): HasMany

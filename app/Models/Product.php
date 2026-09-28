@@ -18,6 +18,12 @@ class Product extends Model
         'sku',
         'description',
         'price',
+        'compare_at_price',
+        'badge',
+        'weight_grams',
+        'material',
+        'color',
+        'dimensions',
         'stock',
         'image_url',
         'is_active',
@@ -28,10 +34,33 @@ class Product extends Model
     {
         return [
             'price' => 'decimal:2',
+            'compare_at_price' => 'decimal:2',
+            'weight_grams' => 'integer',
             'stock' => 'integer',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
         ];
+    }
+
+    public function hasDiscount(): bool
+    {
+        return $this->compare_at_price !== null && (int) $this->compare_at_price > (int) $this->price;
+    }
+
+    public function discountPercent(): int
+    {
+        if (! $this->hasDiscount()) {
+            return 0;
+        }
+
+        return (int) round((1 - (int) $this->price / (int) $this->compare_at_price) * 100);
+    }
+
+    public function averageRating(): ?float
+    {
+        $average = $this->reviews()->where('is_approved', true)->avg('rating');
+
+        return $average === null ? null : round((float) $average, 1);
     }
 
     public function getRouteKeyName(): string
@@ -47,5 +76,15 @@ class Product extends Model
     public function cartItems(): HasMany
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
     }
 }

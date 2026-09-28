@@ -121,4 +121,51 @@ document.addEventListener('DOMContentLoaded', () => {
             message.hidden = false;
         });
     }
+
+    // 7. Menu akun dropdown
+    const accountMenu = document.querySelector('.account-menu');
+    if (accountMenu) {
+        const trigger = accountMenu.querySelector('.account-trigger');
+        trigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const open = accountMenu.classList.toggle('is-open');
+            trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        document.addEventListener('click', () => {
+            accountMenu.classList.remove('is-open');
+            trigger.setAttribute('aria-expanded', 'false');
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                accountMenu.classList.remove('is-open');
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    // 8. Menu mobile
+    const mobileToggle = document.querySelector('.mobile-menu-toggle');
+    const header = document.querySelector('.site-header');
+    if (mobileToggle && header) {
+        mobileToggle.addEventListener('click', () => {
+            const open = header.classList.toggle('is-open');
+            mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+    }
+
+    // 9. Quantity stepper di detail produk
+    document.querySelectorAll('[data-stepper]').forEach((stepper) => {
+        const input = stepper.querySelector('input');
+        if (!input) return;
+
+        stepper.querySelectorAll('[data-step]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const min = parseInt(input.min, 10) || 1;
+                const max = parseInt(input.max, 10) || 99;
+                const current = parseInt(input.value, 10) || min;
+                const next = button.dataset.step === 'up' ? current + 1 : current - 1;
+                input.value = Math.min(max, Math.max(min, next));
+            });
+        });
+    });
 });

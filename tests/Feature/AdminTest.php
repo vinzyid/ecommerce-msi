@@ -110,6 +110,35 @@ class AdminTest extends TestCase
             ->assertSee('Status pesanan');
     }
 
+    public function test_admin_can_create_a_voucher(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)->post('/admin/vouchers', [
+            'code' => 'ujicoba20',
+            'description' => 'Diskon uji coba',
+            'type' => 'percent',
+            'value' => 20,
+            'min_spend' => 50000,
+            'max_discount' => 30000,
+            'is_active' => '1',
+        ])->assertRedirect('/admin/vouchers');
+
+        $this->assertDatabaseHas('vouchers', [
+            'code' => 'UJICOBA20',
+            'type' => 'percent',
+            'value' => 20,
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_customer_cannot_manage_vouchers(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get('/admin/vouchers')
+            ->assertForbidden();
+    }
+
     public function test_admin_can_promote_customer_but_not_demote_self(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

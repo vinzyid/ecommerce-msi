@@ -4,18 +4,30 @@ namespace App\Http\Controllers;
 
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Support\CartCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CartController extends Controller
 {
+    public function __construct(private readonly CartCalculator $calculator)
+    {
+    }
+
     public function index(Request $request): View
     {
         $cartItems = $request->user()->cartItems()->with('product.category')->get();
-        $subtotal = $cartItems->sum(fn (CartItem $item) => (int) $item->product->price * $item->quantity);
+        $summary = $this->calculator->summarize($request->user(), $request->session()->get('voucher_code'));
 
-        return view('cart.index', compact('cartItems', 'subtotal'));
+        return view('cart.index', [
+            'cartItems' => $cartItems,
+            'subtotal' => $summary['subtotal'],
+            'discount' => $summary['discount'],
+            'shipping' => $summary['shipping'],
+            'total' => $summary['total'],
+            'voucher' => $summary['voucher'],
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -39,6 +51,10 @@ class CartController extends Controller
 
         $cartItem->quantity = $newQuantity;
         $cartItem->save();
+
+        if ($request->boolean('buy_now')) {
+            return redirect()->route('checkout.create')->with('success', 'Produk siap dibeli.');
+        }
 
         return redirect()->route('cart.index')->with('success', 'Produk ditambahkan ke cart.');
     }
@@ -66,6 +82,13 @@ class CartController extends Controller
         $cartItem->delete();
 
         return back()->with('success', 'Produk dihapus dari cart.');
+    }
+
+    public function destroyAll(Request $request): RedirectResponse
+    {
+        $request->user()->cartItems()->delete();
+
+        return back()->with('success', 'Cart dikosongkan.');
     }
 
     private function ensureOwner(Request $request, CartItem $cartItem): void
