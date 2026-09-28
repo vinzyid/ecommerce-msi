@@ -74,4 +74,53 @@ class AdminTest extends TestCase
             ->assertSessionHasErrors('status');
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'completed']);
     }
+
+    public function test_customer_cannot_access_user_management(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get('/admin/users')
+            ->assertForbidden();
+    }
+
+    public function test_admin_can_search_and_view_users(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true, 'username' => 'admin']);
+        $budi = User::factory()->create(['username' => 'budi']);
+        User::factory()->create(['username' => 'sari']);
+
+        $this->actingAs($admin)->get('/admin/users?q=budi')
+            ->assertOk()
+            ->assertSee('budi')
+            ->assertDontSee('sari');
+
+        $this->actingAs($admin)->get("/admin/users/{$budi->id}")
+            ->assertOk()
+            ->assertSee('budi');
+    }
+
+    public function test_admin_dashboard_shows_statistics(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)->get('/admin')
+            ->assertOk()
+            ->assertSee('Statistik toko')
+            ->assertSee('Produk per kategori')
+            ->assertSee('Pendapatan bulanan')
+            ->assertSee('Status pesanan');
+    }
+
+    public function test_admin_can_promote_customer_but_not_demote_self(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+
+        $this->actingAs($admin)->patch("/admin/users/{$customer->id}/role", ['is_admin' => '1'])
+            ->assertRedirect();
+        $this->assertDatabaseHas('users', ['id' => $customer->id, 'is_admin' => true]);
+
+        $this->actingAs($admin)->patch("/admin/users/{$admin->id}/role", ['is_admin' => '0'])
+            ->assertSessionHasErrors('is_admin');
+        $this->assertDatabaseHas('users', ['id' => $admin->id, 'is_admin' => true]);
+    }
 }

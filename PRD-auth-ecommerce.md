@@ -31,6 +31,7 @@ Pelanggan memiliki seluruh akses pengunjung, ditambah:
 - Menambah dan mengubah isi cart
 - Checkout
 - Melihat daftar serta detail pesanannya
+- Melihat profil, statistik belanja, dan riwayat pesanan di halaman akun
 - Keluar dari akun
 
 ### Admin
@@ -45,6 +46,8 @@ Admin memiliki seluruh akses pelanggan, ditambah:
 - Mengubah status pesanan
 
 Kolom `users.is_admin` menentukan akses admin. Middleware `admin` melindungi seluruh route `/admin`.
+
+Profil pengguna memakai avatar inisial yang dihitung dari username. Aplikasi tidak menyimpan atau mengunggah foto.
 
 ## 4. Model Data
 
@@ -229,7 +232,14 @@ RESOURCE /admin/products
 GET      /admin/orders
 GET      /admin/orders/{order}
 PATCH    /admin/orders/{order}/status
+GET      /admin/users
+GET      /admin/users/{user}
+PATCH    /admin/users/{user}/role
 ```
+
+Dashboard menampilkan ringkasan angka dan tiga grafik: produk per kategori, pendapatan enam bulan terakhir, serta komposisi status pesanan. Grafik dirender dengan CSS murni, tanpa pustaka chart.
+
+Admin dapat mencari pengguna, membuka detail beserta riwayat pesanannya, dan mengubah peran akun. Admin tidak dapat menurunkan peran akunnya sendiri.
 
 Admin tidak menghapus kategori atau produk dari antarmuka. Admin memakai status aktif untuk menyembunyikan data tanpa merusak relasi pesanan.
 
@@ -254,9 +264,11 @@ Antarmuka memakai gaya retail formal:
 - serif tegak untuk judul dan sans-serif untuk isi
 - foto produk lokal dengan rasio yang konsisten
 - grid rapi, border tipis, dan bayangan ringan
+- ikon garis SVG untuk navigasi, dirender tanpa pustaka ikon
+- grafik dashboard dirender dengan CSS murni
 - copy literal yang menjelaskan tindakan
 
-Hindari headline puitis, gradient, glassmorphism, blob, serif miring, teks raksasa, ikon dekoratif, dan slogan abstrak.
+Hindari headline puitis, glassmorphism, blob, serif miring, teks raksasa, ikon dekoratif, dan slogan abstrak. Gradient dipakai terbatas hanya untuk latar panel gelap dan pengisian grafik.
 
 ## 13. Seed Data
 
@@ -283,6 +295,8 @@ password: Admin123!
 - Pelanggan tidak dapat membaca cart atau pesanan milik akun lain.
 - User biasa menerima HTTP 403 saat membuka `/admin`.
 - Admin dapat mengelola kategori, produk, stok, dan status pesanan.
+- Admin dapat mencari pengguna serta mengubah peran akun.
+- Dashboard admin menampilkan ringkasan angka dan tiga grafik.
 - Seluruh feature test utama lulus.
 
 ## 15. Batasan

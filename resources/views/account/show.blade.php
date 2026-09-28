@@ -6,8 +6,14 @@
 <div class="account-shell">
     <header class="account-heading">
         <span class="section-code">AKUN / DATA PELANGGAN</span>
-        <h1>Halo, {{ $user->username }}.</h1>
-        <p>Kelola data diri, pantau belanja, dan telusuri status pesanan dari satu halaman.</p>
+        <div class="account-identity">
+            <span class="avatar avatar-lg" aria-hidden="true">{{ $user->initials() }}</span>
+            <div>
+                <h1>Halo, {{ $user->username }}.</h1>
+                <p>{{ $user->email }} &middot; {{ $user->is_admin ? 'Admin' : 'Pelanggan' }}</p>
+            </div>
+        </div>
+        <p class="account-intro">Kelola data diri, pantau belanja, dan telusuri status pesanan dari satu halaman.</p>
     </header>
 
     <section class="account-stats" aria-label="Ringkasan aktivitas akun">

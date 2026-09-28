@@ -25,7 +25,13 @@
             <section class="cart-list" aria-label="Isi cart">
                 @foreach ($cartItems as $item)
                     <article class="cart-row">
-                        <div class="cart-code">{{ strtoupper(substr($item->product->category->name, 0, 2)) }}</div>
+                        <a class="cart-thumb" href="{{ route('products.show', $item->product) }}" tabindex="-1" aria-hidden="true">
+                            @if ($item->product->image_url)
+                                <img src="{{ $item->product->image_url }}" alt="" loading="lazy">
+                            @else
+                                <span>{{ strtoupper(substr($item->product->category->name, 0, 2)) }}</span>
+                            @endif
+                        </a>
                         <div class="cart-product">
                             <span>{{ $item->product->sku }}</span>
                             <h2><a href="{{ route('products.show', $item->product) }}">{{ $item->product->name }}</a></h2>

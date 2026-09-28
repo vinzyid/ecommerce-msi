@@ -50,6 +50,13 @@ class User extends Authenticatable
         ];
     }
 
+    public function initials(): string
+    {
+        $source = trim((string) $this->username) !== '' ? $this->username : (string) $this->email;
+
+        return strtoupper(substr($source, 0, 1));
+    }
+
     public function cartItems(): HasMany
     {
         return $this->hasMany(CartItem::class);
