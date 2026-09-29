@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Wishlist — NADI Market')
+@section('title', 'Wishlist — '.config('app.name'))
 
 @section('content')
 <div class="page-shell">

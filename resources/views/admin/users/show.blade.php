@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pengguna '.$user->username.' — Etalase')
+@section('title', 'Pengguna '.$user->username.' — '.config('app.name'))
 
 @section('content')
 <div class="admin-shell">

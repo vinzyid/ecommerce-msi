@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Terjadi kendala — Etalase')</title>
+    <title>@yield('title', 'Terjadi kendala — '.config('app.name'))</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -90,16 +90,16 @@
     </div>
 
     <header class="site-header">
-        <a class="brand" href="{{ route('home') }}" aria-label="Etalase, halaman katalog">
-            <span class="brand-mark" aria-hidden="true">E</span>
-            <span class="brand-name">ETALASE</span>
+        <a class="brand" href="{{ route('home') }}" aria-label="{{ config('app.name') }}, halaman katalog">
+            <span class="brand-mark" aria-hidden="true">{{ strtoupper(substr(config('app.name'), 0, 1)) }}</span>
+            <span class="brand-name">{{ strtoupper(config('app.name')) }}</span>
         </a>
     </header>
 
     <main>
         <section class="error-shell">
             <div class="error-card">
-                <span class="section-code">ETALASE / {{ strtoupper($__env->yieldContent('code', 'ERROR')) }}</span>
+                <span class="section-code">{{ strtoupper(config('app.name')) }} / {{ strtoupper($__env->yieldContent('code', 'ERROR')) }}</span>
                 <div class="error-body">
                     <h2 class="error-code">@yield('code', 'Error')</h2>
                     <h1>@yield('message', 'Terjadi kendala')</h1>
@@ -117,7 +117,7 @@
     </main>
 
     <footer class="site-footer">
-        <span>ETALASE / TOKO ONLINE</span>
+        <span>{{ strtoupper(config('app.name')) }} / TOKO ONLINE</span>
         <span>Dikembangkan oleh Rafi Pandya P &copy; {{ now()->year }}</span>
     </footer>
 </body>

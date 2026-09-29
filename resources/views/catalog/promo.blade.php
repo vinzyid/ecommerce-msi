@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Promo Berjalan — NADI Market')
+@section('title', 'Promo Berjalan — '.config('app.name'))
 
 @section('content')
 <div class="page-shell">

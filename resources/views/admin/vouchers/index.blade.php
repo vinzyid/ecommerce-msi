@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Voucher Admin — NADI Market')
+@section('title', 'Voucher Admin — '.config('app.name'))
 
 @section('content')
 <div class="admin-shell">

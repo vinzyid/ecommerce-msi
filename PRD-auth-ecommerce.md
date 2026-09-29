@@ -1,8 +1,10 @@
-# PRD Website E-Commerce NADI Market
+# PRD Website E-Commerce
 
 ## 1. Tujuan
 
-NADI Market merupakan aplikasi e-commerce untuk praktikum Aplikasi Web. Pengunjung dapat melihat katalog, kategori, dan promo. Pelanggan dapat membuat akun, mengelola wishlist, cart, checkout, menulis ulasan, dan memeriksa pesanan. Admin mengelola kategori, produk, stok, voucher, pengguna, serta status pesanan.
+Aplikasi e-commerce untuk praktikum Aplikasi Web. Pengunjung dapat melihat katalog, kategori, dan promo. Pelanggan dapat membuat akun, mengelola wishlist, cart, checkout, menulis ulasan, dan memeriksa pesanan. Admin mengelola kategori, produk, stok, voucher, pengguna, serta status pesanan.
+
+Nama toko diambil dari `APP_NAME` pada `.env` melalui `config('app.name')`. Seluruh judul halaman, logo, dan footer memakai nilai tersebut, sehingga nama toko dapat diganti tanpa mengubah kode.
 
 ## 2. Stack
 
@@ -374,7 +376,7 @@ Seeder membuat:
 - empat kategori
 - belasan produk dengan variasi stok, harga, harga promo, label, dan atribut
 - ulasan contoh untuk setiap produk
-- tiga kode promo: `HEMAT10`, `GRATIS15`, dan `NADI25`
+- tiga kode promo: `HEMAT10`, `GRATIS15`, dan `DISKON25`
 
 Kredensial admin untuk development:
 

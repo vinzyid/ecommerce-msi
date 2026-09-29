@@ -140,10 +140,13 @@ class DatabaseSeeder extends Seeder
 
     private function seedVouchers(): void
     {
+        // Rapikan kode voucher lama agar tidak muncul ganda setelah nama toko diganti.
+        Voucher::query()->where('code', 'NADI25')->update(['code' => 'DISKON25']);
+
         $vouchers = [
             ['code' => 'HEMAT10', 'description' => 'Diskon 10% maksimal Rp20.000', 'type' => 'percent', 'value' => 10, 'min_spend' => 100000, 'max_discount' => 20000],
             ['code' => 'GRATIS15', 'description' => 'Potongan Rp15.000 tanpa minimum', 'type' => 'fixed', 'value' => 15000, 'min_spend' => 0, 'max_discount' => null],
-            ['code' => 'NADI25', 'description' => 'Diskon 25% untuk belanja di atas Rp500.000', 'type' => 'percent', 'value' => 25, 'min_spend' => 500000, 'max_discount' => 100000],
+            ['code' => 'DISKON25', 'description' => 'Diskon 25% untuk belanja di atas Rp500.000', 'type' => 'percent', 'value' => 25, 'min_spend' => 500000, 'max_discount' => 100000],
         ];
 
         foreach ($vouchers as $data) {

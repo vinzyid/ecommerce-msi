@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Daftar — Etalase')
+@section('title', 'Daftar — '.config('app.name'))
 @section('body-class', 'auth-page')
 
 @section('content')

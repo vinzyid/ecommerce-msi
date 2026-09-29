@@ -1,19 +1,19 @@
 @extends('layouts.app')
 
-@section('title', 'Tentang — NADI Market')
+@section('title', 'Tentang — '.config('app.name'))
 
 @section('content')
 <div class="page-shell narrow-shell">
     <header class="page-heading">
         <span class="section-code">INFORMASI / TENTANG</span>
-        <h1>Tentang NADI Market</h1>
+        <h1>Tentang {{ config('app.name') }}</h1>
         <p>Toko online perlengkapan rumah, meja kerja, dan kebutuhan harian.</p>
     </header>
 
     <div class="about-grid">
         <article class="about-card">
             <h2>Tujuan</h2>
-            <p>NADI Market membantu pelanggan menemukan perlengkapan yang benar-benar dipakai setiap hari. Setiap produk dipilih dengan mempertimbangkan fungsi, ketahanan, dan harga yang wajar.</p>
+            <p>{{ config('app.name') }} membantu pelanggan menemukan perlengkapan yang benar-benar dipakai setiap hari. Setiap produk dipilih dengan mempertimbangkan fungsi, ketahanan, dan harga yang wajar.</p>
         </article>
 
         <article class="about-card">

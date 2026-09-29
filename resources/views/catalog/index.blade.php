@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'NADI Market — Perlengkapan Rumah dan Meja Kerja')
+@section('title', config('app.name').' — Perlengkapan Rumah dan Meja Kerja')
 
 @section('content')
 @php
@@ -140,7 +140,7 @@
 @if (! $hasFilter)
     <section class="home-section service-section">
         <header class="home-section-heading">
-            <div><span class="section-code">LAYANAN</span><h2>Kenapa belanja di NADI Market</h2></div>
+            <div><span class="section-code">LAYANAN</span><h2>Kenapa belanja di {{ config('app.name') }}</h2></div>
         </header>
         <div class="service-strip">
             @foreach ($trustItems as $index => $item)

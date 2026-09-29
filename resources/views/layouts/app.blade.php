@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="NADI Market, toko online perlengkapan rumah, meja kerja, dan kebutuhan harian.">
-    <title>@yield('title', 'NADI Market — Perlengkapan Rumah dan Meja Kerja')</title>
+    <meta name="description" content="{{ config('app.name') }}, toko online perlengkapan rumah, meja kerja, dan kebutuhan harian.">
+    <title>@yield('title', config('app.name').' — Perlengkapan Rumah dan Meja Kerja')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,9 +18,9 @@
 
     <header class="site-header">
         <div class="header-top">
-            <a class="brand" href="{{ route('home') }}" aria-label="NADI Market, halaman utama">
-                <span class="brand-mark" aria-hidden="true">N</span>
-                <span class="brand-name">NADI MARKET</span>
+            <a class="brand" href="{{ route('home') }}" aria-label="{{ config('app.name') }}, halaman utama">
+                <span class="brand-mark" aria-hidden="true">{{ strtoupper(substr(config('app.name'), 0, 1)) }}</span>
+                <span class="brand-name">{{ strtoupper(config('app.name')) }}</span>
             </a>
 
             <form class="header-search" method="GET" action="{{ route('home') }}" role="search">
@@ -104,9 +104,9 @@
     <footer class="site-footer">
         <div class="footer-columns">
             <div class="footer-brand">
-                <a class="brand" href="{{ route('home') }}" aria-label="NADI Market, halaman utama">
-                    <span class="brand-mark" aria-hidden="true">N</span>
-                    <span class="brand-name">NADI MARKET</span>
+                <a class="brand" href="{{ route('home') }}" aria-label="{{ config('app.name') }}, halaman utama">
+                    <span class="brand-mark" aria-hidden="true">{{ strtoupper(substr(config('app.name'), 0, 1)) }}</span>
+                    <span class="brand-name">{{ strtoupper(config('app.name')) }}</span>
                 </a>
                 <p>Perlengkapan rumah, meja kerja, dan kebutuhan harian yang dipilih untuk dipakai setiap hari.</p>
                 <ul class="footer-contact">
@@ -140,7 +140,7 @@
         </div>
 
         <div class="footer-bottom">
-            <span>NADI MARKET &bull; PERLENGKAPAN RUMAH DAN KERJA</span>
+            <span>{{ strtoupper(config('app.name')) }} &bull; PERLENGKAPAN RUMAH DAN KERJA</span>
             <span>Dikembangkan oleh Rafi Pandya P &copy; {{ now()->year }}</span>
         </div>
     </footer>

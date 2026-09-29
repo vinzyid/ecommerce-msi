@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Masuk — Etalase')
+@section('title', 'Masuk — '.config('app.name'))
 @section('body-class', 'auth-page')
 
 @section('content')

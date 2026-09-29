@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pesanan — Etalase')
+@section('title', 'Pesanan — '.config('app.name'))
 
 @section('content')
 <div class="page-shell narrow-shell">

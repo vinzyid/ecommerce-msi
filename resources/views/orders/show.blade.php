@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $order->order_number.' — Etalase')
+@section('title', $order->order_number.' — '.config('app.name'))
 
 @section('content')
 <div class="page-shell narrow-shell">

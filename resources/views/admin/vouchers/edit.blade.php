@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Ubah Voucher — NADI Market')
+@section('title', 'Ubah Voucher — '.config('app.name'))
 
 @section('content')
 <div class="admin-shell">

@@ -1,6 +1,6 @@
 @extends('errors.layout')
 
-@section('title', 'Kesalahan server — Etalase')
+@section('title', 'Kesalahan server — '.config('app.name'))
 @section('code', '500')
 @section('message', 'Terjadi kesalahan pada server.')
 @section('description', 'Kami tidak dapat memproses permintaan Anda saat ini. Tim toko sudah mengetahui kendala ini. Silakan coba lagi beberapa saat.')

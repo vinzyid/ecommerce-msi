@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Produk Admin — Etalase')
+@section('title', 'Produk Admin — '.config('app.name'))
 
 @section('content')
 <div class="admin-shell">

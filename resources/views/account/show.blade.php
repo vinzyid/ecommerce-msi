@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Akun — Etalase')
+@section('title', 'Akun — '.config('app.name'))
 
 @section('content')
 <div class="account-shell">

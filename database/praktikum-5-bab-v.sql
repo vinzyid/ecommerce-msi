@@ -1,7 +1,7 @@
 -- =====================================================================
 -- PRAKTIKUM 5 - MANAJEMEN SISTEM INFORMASI
 -- Rafi Pandya Prabowo / 24051130076 / Teknologi Informasi J
--- Database: ecommerce (NADI Market)
+-- Database: ecommerce
 --
 -- Jalankan per-bagian di MySQL Workbench, screenshot tiap hasilnya
 -- sesuai nomor bagian pada template laporan.

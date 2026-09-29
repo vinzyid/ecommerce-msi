@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $product->name.' — NADI Market')
+@section('title', $product->name.' — '.config('app.name'))
 
 @section('content')
 @php
