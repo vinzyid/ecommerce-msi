@@ -11,6 +11,36 @@
         ['icon' => 'i-package', 'title' => 'Stok Akurat', 'text' => 'Diperbarui setiap hari'],
         ['icon' => 'i-refresh', 'title' => 'Produk Terkurasi', 'text' => 'Dipilih dari koleksi pilihan'],
     ];
+
+    $banners = [
+        [
+            'icon' => 'i-truck',
+            'code' => 'PROMO PENGIRIMAN',
+            'title' => 'Gratis ongkir mulai Rp300.000',
+            'subtitle' => 'Berlaku untuk semua produk di katalog. Bisa COD atau transfer bank.',
+            'cta' => 'Lihat katalog',
+            'image' => 'images/products/tas-lipat.jpg',
+            'link' => '#katalog',
+        ],
+        [
+            'icon' => 'i-package',
+            'code' => 'KATEGORI KERJA',
+            'title' => 'Rapikan meja kerja Anda',
+            'subtitle' => 'Dudukan laptop, notebook grid, dan organizer kabel siap dipakai.',
+            'cta' => 'Jelajahi kategori',
+            'image' => 'images/products/dudukan-laptop.jpg',
+            'link' => route('home', ['category' => 'kerja']),
+        ],
+        [
+            'icon' => 'i-tag',
+            'code' => 'PROMO BERJALAN',
+            'title' => 'Diskon hingga 25 persen',
+            'subtitle' => 'Pakai kode promo HEMAT10, GRATIS15, atau DISKON25 saat checkout.',
+            'cta' => 'Lihat promo',
+            'image' => 'images/products/kopi.jpg',
+            'link' => route('promo'),
+        ],
+    ];
 @endphp
 
 <section class="notice-bar">
@@ -19,6 +49,33 @@
 </section>
 
 @if (! $hasFilter)
+    <section class="banner-carousel" aria-label="Banner iklan berjalan">
+        <div class="banner-track">
+            @foreach ($banners as $index => $banner)
+                <a class="banner-slide {{ $index === 0 ? 'is-active' : '' }}" href="{{ $banner['link'] }}"
+                   style="background-image: linear-gradient(92deg, rgba(13, 33, 67, .94) 6%, rgba(22, 48, 92, .66) 46%, rgba(22, 48, 92, .12) 80%), url('{{ asset($banner['image']) }}')">
+                    <div class="banner-copy">
+                        <span class="section-code"><svg class="icon" aria-hidden="true"><use href="#{{ $banner['icon'] }}"/></svg> {{ $banner['code'] }}</span>
+                        <strong>{{ $banner['title'] }}</strong>
+                        <small>{{ $banner['subtitle'] }}</small>
+                        <span class="banner-cta">{{ $banner['cta'] }} <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+        <button class="banner-nav banner-prev" type="button" aria-label="Banner sebelumnya">
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+        </button>
+        <button class="banner-nav banner-next" type="button" aria-label="Banner berikutnya">
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+        </button>
+        <div class="banner-dots">
+            @foreach ($banners as $index => $banner)
+                <button type="button" aria-label="Ke banner {{ $index + 1 }}" class="{{ $index === 0 ? 'is-active' : '' }}"></button>
+            @endforeach
+        </div>
+    </section>
+
     <section class="hero">
         <div class="hero-copy">
             <span class="section-code">KOLEKSI PILIHAN / {{ now()->year }}</span>
