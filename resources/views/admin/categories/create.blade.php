@@ -1,16 +1,14 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Tambah Kategori — '.config('app.name'))
+@section('heading', 'Tambah Kategori')
 
 @section('content')
-<div class="admin-shell">
-    @include('admin._nav')
-    <div class="editor-layout">
-        <header class="page-heading"><span class="section-code">ADMIN / KATEGORI / BARU</span><h1>Tambah kategori</h1></header>
-        <form class="editor-form" method="POST" action="{{ route('admin.categories.store') }}">
-            @csrf
-            @include('admin.categories._form', ['category' => null, 'submitLabel' => 'Simpan kategori'])
-        </form>
-    </div>
+<div class="mx-auto max-w-2xl">
+    <form method="POST" action="{{ route('admin.categories.store') }}"
+          class="rounded-2xl border border-ink-100 bg-white p-6 shadow-card sm:p-7">
+        @csrf
+        @include('admin.categories._form', ['category' => null, 'submitLabel' => 'Simpan kategori'])
+    </form>
 </div>
 @endsection

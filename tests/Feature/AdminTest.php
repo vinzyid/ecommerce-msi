@@ -104,10 +104,10 @@ class AdminTest extends TestCase
 
         $this->actingAs($admin)->get('/admin')
             ->assertOk()
-            ->assertSee('Statistik toko')
             ->assertSee('Produk per kategori')
             ->assertSee('Pendapatan bulanan')
-            ->assertSee('Status pesanan');
+            ->assertSee('Status pesanan')
+            ->assertSee('Pesanan Terakhir');
     }
 
     public function test_admin_can_create_a_voucher(): void

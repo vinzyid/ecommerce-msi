@@ -1,21 +1,27 @@
-<nav class="admin-nav" aria-label="Navigasi admin">
-    <span>ADMIN</span>
-    <a href="{{ route('admin.dashboard') }}" @class(['active' => request()->routeIs('admin.dashboard')])>
-        <svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg><span>Ringkasan</span>
-    </a>
-    <a href="{{ route('admin.products.index') }}" @class(['active' => request()->routeIs('admin.products.*')])>
-        <svg class="icon" aria-hidden="true"><use href="#i-box"/></svg><span>Produk</span>
-    </a>
-    <a href="{{ route('admin.categories.index') }}" @class(['active' => request()->routeIs('admin.categories.*')])>
-        <svg class="icon" aria-hidden="true"><use href="#i-layers"/></svg><span>Kategori</span>
-    </a>
-    <a href="{{ route('admin.orders.index') }}" @class(['active' => request()->routeIs('admin.orders.*')])>
-        <svg class="icon" aria-hidden="true"><use href="#i-receipt"/></svg><span>Pesanan</span>
-    </a>
-    <a href="{{ route('admin.users.index') }}" @class(['active' => request()->routeIs('admin.users.*')])>
-        <svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><span>Pengguna</span>
-    </a>
-    <a href="{{ route('admin.vouchers.index') }}" @class(['active' => request()->routeIs('admin.vouchers.*')])>
-        <svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg><span>Voucher</span>
-    </a>
+@php
+    $items = [
+        ['route' => 'admin.dashboard', 'label' => 'Ringkasan', 'icon' => 'i-chart'],
+        ['route' => 'admin.products.index', 'match' => 'admin.products.*', 'label' => 'Produk', 'icon' => 'i-box'],
+        ['route' => 'admin.categories.index', 'match' => 'admin.categories.*', 'label' => 'Kategori', 'icon' => 'i-layers'],
+        ['route' => 'admin.orders.index', 'match' => 'admin.orders.*', 'label' => 'Pesanan', 'icon' => 'i-receipt'],
+        ['route' => 'admin.users.index', 'match' => 'admin.users.*', 'label' => 'Pengguna', 'icon' => 'i-users'],
+        ['route' => 'admin.vouchers.index', 'match' => 'admin.vouchers.*', 'label' => 'Voucher', 'icon' => 'i-ticket'],
+    ];
+@endphp
+
+<nav class="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Navigasi admin">
+    @foreach ($items as $item)
+        @php $active = request()->routeIs($item['match'] ?? $item['route']); @endphp
+        <a href="{{ route($item['route']) }}"
+           @class([
+               'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition',
+               'bg-brand-600 text-white shadow-sm' => $active,
+               'text-ink-600 hover:bg-ink-50 hover:text-ink-900' => ! $active,
+           ])>
+            <svg class="h-4.5 w-4.5 {{ $active ? 'text-white' : 'text-ink-400' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <use href="#{{ $item['icon'] }}"/>
+            </svg>
+            {{ $item['label'] }}
+        </a>
+    @endforeach
 </nav>

@@ -1,17 +1,15 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Ubah Produk — '.config('app.name'))
+@section('heading', $product->name)
 
 @section('content')
-<div class="admin-shell">
-    @include('admin._nav')
-    <div class="editor-layout">
-        <header class="page-heading"><span class="section-code">ADMIN / PRODUK / UBAH</span><h1>{{ $product->name }}</h1></header>
-        <form class="editor-form wide-form" method="POST" action="{{ route('admin.products.update', $product) }}">
-            @csrf
-            @method('PUT')
-            @include('admin.products._form', ['submitLabel' => 'Simpan perubahan'])
-        </form>
-    </div>
+<div class="mx-auto max-w-3xl">
+    <form method="POST" action="{{ route('admin.products.update', $product) }}"
+          class="rounded-2xl border border-ink-100 bg-white p-6 shadow-card sm:p-7">
+        @csrf
+        @method('PUT')
+        @include('admin.products._form', ['submitLabel' => 'Simpan perubahan'])
+    </form>
 </div>
 @endsection

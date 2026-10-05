@@ -1,212 +1,198 @@
 @extends('layouts.app')
 
-@section('title', config('app.name').' — Perlengkapan Rumah dan Meja Kerja')
+@section('title', config('app.name').' — Toko Gaming, Diecast & Hobi')
 
 @section('content')
-@php
-    $hasFilter = request('q') || request('category');
-    $trustItems = [
-        ['icon' => 'i-truck', 'title' => 'Pengiriman Cepat', 'text' => 'Kurir khusus dan terlacak'],
-        ['icon' => 'i-lock', 'title' => 'Pembayaran Aman', 'text' => 'COD dan transfer bank'],
-        ['icon' => 'i-package', 'title' => 'Stok Akurat', 'text' => 'Diperbarui setiap hari'],
-        ['icon' => 'i-refresh', 'title' => 'Produk Terkurasi', 'text' => 'Dipilih dari koleksi pilihan'],
-    ];
-
-    $banners = [
-        [
-            'icon' => 'i-truck',
-            'code' => 'PROMO PENGIRIMAN',
-            'title' => 'Gratis ongkir mulai Rp300.000',
-            'subtitle' => 'Berlaku untuk semua produk di katalog. Bisa COD atau transfer bank.',
-            'cta' => 'Lihat katalog',
-            'image' => 'images/products/tas-lipat.jpg',
-            'link' => '#katalog',
-        ],
-        [
-            'icon' => 'i-package',
-            'code' => 'KATEGORI KERJA',
-            'title' => 'Rapikan meja kerja Anda',
-            'subtitle' => 'Dudukan laptop, notebook grid, dan organizer kabel siap dipakai.',
-            'cta' => 'Jelajahi kategori',
-            'image' => 'images/products/dudukan-laptop.jpg',
-            'link' => route('home', ['category' => 'kerja']),
-        ],
-        [
-            'icon' => 'i-tag',
-            'code' => 'PROMO BERJALAN',
-            'title' => 'Diskon hingga 25 persen',
-            'subtitle' => 'Pakai kode promo HEMAT10, GRATIS15, atau DISKON25 saat checkout.',
-            'cta' => 'Lihat promo',
-            'image' => 'images/products/kopi.jpg',
-            'link' => route('promo'),
-        ],
-    ];
-@endphp
-
-<section class="notice-bar">
-    <span>Gratis ongkir untuk pesanan mulai Rp300.000</span>
-    <span>COD dan transfer bank</span>
-</section>
-
-@if (! $hasFilter)
-    <section class="banner-carousel" aria-label="Banner iklan berjalan">
-        <div class="banner-track">
-            @foreach ($banners as $index => $banner)
-                <a class="banner-slide {{ $index === 0 ? 'is-active' : '' }}" href="{{ $banner['link'] }}"
-                   style="background-image: linear-gradient(92deg, rgba(13, 33, 67, .94) 6%, rgba(22, 48, 92, .66) 46%, rgba(22, 48, 92, .12) 80%), url('{{ asset($banner['image']) }}')">
-                    <div class="banner-copy">
-                        <span class="section-code"><svg class="icon" aria-hidden="true"><use href="#{{ $banner['icon'] }}"/></svg> {{ $banner['code'] }}</span>
-                        <strong>{{ $banner['title'] }}</strong>
-                        <small>{{ $banner['subtitle'] }}</small>
-                        <span class="banner-cta">{{ $banner['cta'] }} <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
+    <div class="container-page pt-6">
+        <div class="grid gap-4 lg:grid-cols-[240px_1fr]">
+            {{-- Sidebar kategori (desktop) --}}
+            <aside class="hidden lg:block">
+                <div class="sticky top-32 overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card">
+                    <div class="flex items-center gap-2 border-b border-ink-100 px-4 py-3">
+                        <svg class="h-4.5 w-4.5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><use href="#i-grid"/></svg>
+                        <span class="text-sm font-bold text-ink-900">Semua Kategori</span>
                     </div>
-                </a>
-            @endforeach
-        </div>
-        <button class="banner-nav banner-prev" type="button" aria-label="Banner sebelumnya">
-            <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
-        </button>
-        <button class="banner-nav banner-next" type="button" aria-label="Banner berikutnya">
-            <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
-        </button>
-        <div class="banner-dots">
-            @foreach ($banners as $index => $banner)
-                <button type="button" aria-label="Ke banner {{ $index + 1 }}" class="{{ $index === 0 ? 'is-active' : '' }}"></button>
-            @endforeach
-        </div>
-    </section>
+                    <nav class="p-1.5">
+                        @foreach ($categories as $category)
+                            <a href="{{ route('home', ['category' => $category->slug]) }}"
+                               class="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-ink-600 transition hover:bg-brand-50 hover:text-brand-700">
+                                <span class="truncate">{{ $category->name }}</span>
+                                <span class="ml-2 shrink-0 rounded-md bg-ink-100 px-1.5 py-0.5 text-[11px] font-semibold text-ink-500">{{ $category->products_count }}</span>
+                            </a>
+                        @endforeach
+                    </nav>
+                </div>
+            </aside>
 
-    <section class="hero">
-        <div class="hero-copy">
-            <span class="section-code">KOLEKSI PILIHAN / {{ now()->year }}</span>
-            <h1>Lengkapi rumah dan meja kerja impian Anda.</h1>
-            <p>Temukan perlengkapan rumah, meja kerja, dan kebutuhan harian dengan desain yang rapi untuk menciptakan ruang terbaik.</p>
-            <div class="hero-actions">
-                <a class="primary-button button-link" href="#katalog">Lihat Produk <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-                <a class="secondary-button button-link" href="{{ route('categories.index') }}">Kategori</a>
-            </div>
+            {{-- Hero --}}
+            <div class="space-y-4">
+                <section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ink-950 via-ink-900 to-brand-950 p-6 text-white sm:p-9">
+                    <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-500/25 blur-3xl"></div>
+                    <div class="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-accent-500/15 blur-3xl"></div>
 
-            <div class="hero-trust">
-                @foreach ($trustItems as $item)
-                    <div class="hero-trust-item">
-                        <svg class="icon" aria-hidden="true"><use href="#{{ $item['icon'] }}"/></svg>
-                        <span><strong>{{ $item['title'] }}</strong><small>{{ $item['text'] }}</small></span>
-                    </div>
-                @endforeach
-            </div>
-        </div>
+                    <div class="relative grid items-center gap-8 lg:grid-cols-2">
+                        <div>
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 ring-1 ring-white/15">
+                                <svg class="h-3.5 w-3.5 text-accent-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-flame"/></svg>
+                                Gear baru tiap minggu
+                            </span>
+                            <h1 class="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+                                Lengkapi Setup <span class="text-brand-300">Gaming</span> &amp; Koleksi <span class="text-accent-400">Diecast</span> Kamu
+                            </h1>
+                            <p class="mt-3 max-w-md text-sm leading-relaxed text-white/70">
+                                Keyboard mekanikal, headset, komponen PC, sampai diecast skala 1:18. Semua pilihan untuk main, kerja, dan hobi.
+                            </p>
+                            <div class="mt-6 flex flex-wrap gap-3">
+                                <a href="#produk" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-500">
+                                    Belanja sekarang
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+                                </a>
+                                <a href="{{ route('promo') }}" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-sm font-bold text-white ring-1 ring-white/20 transition hover:bg-white/20">
+                                    Lihat promo
+                                </a>
+                            </div>
 
-        @if ($heroProduct)
-            <a class="hero-visual" href="{{ route('products.show', $heroProduct) }}">
-                @if ($heroProduct->image_url)
-                    <img src="{{ $heroProduct->image_url }}" alt="{{ $heroProduct->name }}">
-                @else
-                    <span class="hero-visual-mark">{{ strtoupper(substr($heroProduct->name, 0, 1)) }}</span>
-                @endif
-                <span class="hero-chip">
-                    <span class="hero-chip-visual">
-                        @if ($heroProduct->image_url)
-                            <img src="{{ $heroProduct->image_url }}" alt="">
+                            <dl class="mt-7 flex flex-wrap gap-6">
+                                <div>
+                                    <dt class="text-xs text-white/50">Produk pilihan</dt>
+                                    <dd class="text-xl font-extrabold">{{ $products->total() }}+</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-xs text-white/50">Kategori</dt>
+                                    <dd class="text-xl font-extrabold">{{ $categories->count() }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-xs text-white/50">Gratis ongkir</dt>
+                                    <dd class="text-xl font-extrabold">Rp300rb+</dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        @if ($heroProduct)
+                            <a href="{{ route('products.show', $heroProduct) }}"
+                               class="group relative block overflow-hidden rounded-2xl bg-white/5 ring-1 ring-white/10 transition hover:ring-brand-400/50">
+                                <img src="{{ $heroProduct->image_url }}" alt="{{ $heroProduct->name }}"
+                                     class="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105">
+                                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink-950 via-ink-950/70 to-transparent p-5">
+                                    <span class="text-[11px] font-semibold uppercase tracking-wide text-brand-300">{{ $heroProduct->category->name }}</span>
+                                    <h3 class="mt-1 text-base font-bold text-white">{{ $heroProduct->name }}</h3>
+                                    <p class="mt-1 text-lg font-extrabold text-accent-400">Rp{{ number_format($heroProduct->price, 0, ',', '.') }}</p>
+                                </div>
+                                @if ($heroProduct->hasDiscount())
+                                    <span class="absolute right-4 top-4 rounded-lg bg-danger-500 px-2.5 py-1.5 text-xs font-bold text-white">
+                                        -{{ $heroProduct->discountPercent() }}%
+                                    </span>
+                                @endif
+                            </a>
                         @endif
-                    </span>
-                    <span class="hero-chip-body">
-                        <small>{{ $heroProduct->category->name }}</small>
-                        <strong>{{ $heroProduct->name }}</strong>
-                        <b>Rp{{ number_format($heroProduct->price, 0, ',', '.') }}</b>
-                    </span>
-                    <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>
-                </span>
-            </a>
-        @endif
-    </section>
+                    </div>
+                </section>
 
-    <section class="home-section category-section">
-        <header class="home-section-heading">
-            <div><span class="section-code">KATEGORI</span><h2>Belanja berdasarkan kebutuhan</h2></div>
-            <a href="{{ route('categories.index') }}">Lihat semua kategori</a>
-        </header>
-        <div class="category-tiles">
-            @php
-                $categoryTaglines = [
-                    'kebutuhan-harian' => 'Perlengkapan yang dipakai tiap hari',
-                    'rumah' => 'Rapikan dapur dan ruang tinggal',
-                    'kerja' => 'Dukung aktivitas meja kerja',
-                    'hadiah' => 'Siap diberikan kapan saja',
-                ];
-            @endphp
-            @foreach ($categories as $category)
-                <a href="{{ route('home', ['category' => $category->slug]) }}">
-                    <span class="category-tile-icon" aria-hidden="true">
-                        <svg class="icon"><use href="#i-layers"/></svg>
-                    </span>
-                    <strong>{{ $category->name }}</strong>
-                    <small>{{ $categoryTaglines[$category->slug] ?? $category->description }}</small>
-                    <span class="category-tile-count">{{ $category->products_count }} produk</span>
-                    <span class="category-tile-link">Jelajahi <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></span>
-                </a>
-            @endforeach
-        </div>
-    </section>
-@endif
-
-<section class="home-section featured-section" id="katalog">
-    <header class="home-section-heading">
-        <div>
-            <span class="section-code">{{ $hasFilter ? 'HASIL PENCARIAN' : 'PRODUK PILIHAN' }}</span>
-            <h2>{{ $hasFilter ? 'Hasil pencarian' : 'Produk pilihan' }}</h2>
-        </div>
-        @if ($hasFilter)
-            <a href="{{ route('home') }}">Hapus filter</a>
-        @else
-            <span>{{ $products->total() }} produk tersedia</span>
-        @endif
-    </header>
-
-    @if ($hasFilter)
-        <nav class="category-filter" aria-label="Filter kategori">
-            <a href="{{ route('home', array_filter(['q' => request('q')])) }}" @class(['active' => ! request('category')])>Semua</a>
-            @foreach ($categories as $category)
-                <a href="{{ route('home', array_filter(['q' => request('q'), 'category' => $category->slug])) }}" @class(['active' => request('category') === $category->slug])>
-                    {{ $category->name }} <small>{{ $category->products_count }}</small>
-                </a>
-            @endforeach
-        </nav>
-    @endif
-
-    <div class="product-grid">
-        @forelse ($products as $product)
-            @include('components.product-card', ['product' => $product])
-        @empty
-            <div class="empty-state">
-                <h2>Produk tidak ditemukan</h2>
-                <p>Ubah kata pencarian atau pilih kategori lain.</p>
-                <a class="text-link" href="{{ route('home') }}">Lihat semua produk</a>
+                {{-- Bar keunggulan --}}
+                <section class="grid gap-3 sm:grid-cols-3">
+                    @foreach ([
+                        ['i-truck', 'Gratis ongkir', 'Belanja min. Rp300.000'],
+                        ['i-shield', 'Garansi resmi', 'Produk original bergaransi'],
+                        ['i-refresh', 'Retur 7 hari', 'Tidak cocok? Tukar saja'],
+                    ] as [$icon, $title, $desc])
+                        <div class="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 shadow-card">
+                            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                                <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{{ $icon }}"/></svg>
+                            </span>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-ink-900">{{ $title }}</p>
+                                <p class="truncate text-xs text-ink-500">{{ $desc }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </section>
             </div>
-        @endforelse
+        </div>
     </div>
 
-    @if ($products->hasPages())
-        <nav class="pagination" aria-label="Navigasi halaman">
-            @if ($products->onFirstPage())<span>Sebelumnya</span>@else<a href="{{ $products->previousPageUrl() }}">Sebelumnya</a>@endif
-            <b>Halaman {{ $products->currentPage() }} dari {{ $products->lastPage() }}</b>
-            @if ($products->hasMorePages())<a href="{{ $products->nextPageUrl() }}">Berikutnya</a>@else<span>Berikutnya</span>@endif
-        </nav>
-    @endif
-</section>
+    {{-- Kategori --}}
+    <section class="container-page mt-10" data-reveal>
+        <div class="mb-4 flex items-end justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-extrabold tracking-tight text-ink-900">Jelajahi Kategori</h2>
+                <p class="mt-0.5 text-sm text-ink-500">Temukan gear sesuai kebutuhanmu.</p>
+            </div>
+            <a href="{{ route('categories.index') }}" class="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700">
+                Semua kategori
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+            </a>
+        </div>
 
-@if (! $hasFilter)
-    <section class="home-section service-section">
-        <header class="home-section-heading">
-            <div><span class="section-code">LAYANAN</span><h2>Kenapa belanja di {{ config('app.name') }}</h2></div>
-        </header>
-        <div class="service-strip">
-            @foreach ($trustItems as $index => $item)
-                <div>
-                    <b>{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</b>
-                    <span><strong>{{ $item['title'] }}</strong><small>{{ $item['text'] }}</small></span>
-                </div>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+            @foreach ($categories as $category)
+                <a href="{{ route('home', ['category' => $category->slug]) }}"
+                   class="group flex flex-col items-center gap-2.5 rounded-2xl border border-ink-100 bg-white p-4 text-center shadow-card transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-lift">
+                    <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 text-brand-600 transition group-hover:from-brand-500 group-hover:to-brand-700 group-hover:text-white">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-gamepad"/></svg>
+                    </span>
+                    <span class="text-xs font-semibold leading-tight text-ink-700 group-hover:text-brand-700">{{ $category->name }}</span>
+                    <span class="text-[11px] text-ink-400">{{ $category->products_count }} produk</span>
+                </a>
             @endforeach
         </div>
     </section>
-@endif
+
+    {{-- Produk Unggulan --}}
+    @if ($featuredProducts->isNotEmpty())
+        <section class="container-page mt-10" data-reveal>
+            <div class="mb-4 flex items-end justify-between gap-4">
+                <div>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-accent-500/15 px-2.5 py-1 text-xs font-bold text-accent-600">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-bolt"/></svg>
+                        Paling dicari
+                    </span>
+                    <h2 class="mt-2 text-xl font-extrabold tracking-tight text-ink-900">Produk Unggulan</h2>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3.5 md:grid-cols-3 lg:grid-cols-5">
+                @foreach ($featuredProducts as $product)
+                    <x-product-card :product="$product" :wishlisted-product-ids="$wishlistedProductIds" />
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    {{-- Grid produk utama --}}
+    <section id="produk" class="container-page mt-12" data-reveal>
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h2 class="text-xl font-extrabold tracking-tight text-ink-900">
+                    {{ request('q') ? 'Hasil pencarian "'.request('q').'"' : 'Katalog Produk' }}
+                </h2>
+                <p class="mt-0.5 text-sm text-ink-500">{{ $products->total() }} produk ditemukan</p>
+            </div>
+
+            @if (request('q') || request('category'))
+                <a href="{{ route('home') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-ink-200 bg-white px-3.5 py-2 text-sm font-semibold text-ink-600 transition hover:border-ink-300">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><use href="#i-close"/></svg>
+                    Reset filter
+                </a>
+            @endif
+        </div>
+
+        @if ($products->isEmpty())
+            <div class="rounded-2xl border border-dashed border-ink-200 bg-white py-16 text-center">
+                <svg class="mx-auto h-12 w-12 text-ink-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><use href="#i-search"/></svg>
+                <p class="mt-3 font-semibold text-ink-700">Produk tidak ditemukan</p>
+                <p class="mt-1 text-sm text-ink-500">Coba kata kunci lain atau jelajahi kategori.</p>
+                <a href="{{ route('home') }}" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Kembali ke beranda</a>
+            </div>
+        @else
+            <div class="grid grid-cols-2 gap-3.5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                @foreach ($products as $product)
+                    <x-product-card :product="$product" :wishlisted-product-ids="$wishlistedProductIds" />
+                @endforeach
+            </div>
+
+            <div class="mt-8">
+                {{ $products->links() }}
+            </div>
+        @endif
+    </section>
 @endsection

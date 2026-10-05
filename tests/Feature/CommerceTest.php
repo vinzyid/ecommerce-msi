@@ -166,7 +166,10 @@ class CommerceTest extends TestCase
         $this->actingAs($user)->post("/wishlist/{$product->slug}")->assertRedirect();
         $this->assertDatabaseHas('wishlists', ['user_id' => $user->id, 'product_id' => $product->id]);
 
-        $this->actingAs($user)->get('/wishlist')->assertOk()->assertSee($product->name)->assertSee('wishlist-toggle');
+        $this->actingAs($user)->get('/wishlist')
+            ->assertOk()
+            ->assertSee($product->name)
+            ->assertSee('Kosongkan wishlist');
 
         $this->actingAs($user)->delete("/wishlist/{$product->slug}")->assertRedirect();
         $this->assertDatabaseCount('wishlists', 0);
@@ -208,7 +211,7 @@ class CommerceTest extends TestCase
         $this->get('/products/'.$product->slug)
             ->assertOk()
             ->assertSee('Aluminium')
-            ->assertSee('Informasi produk')
+            ->assertSee('Spesifikasi')
             ->assertSee('4,0');
     }
 

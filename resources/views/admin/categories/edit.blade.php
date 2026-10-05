@@ -1,17 +1,15 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Ubah Kategori — '.config('app.name'))
+@section('heading', $category->name)
 
 @section('content')
-<div class="admin-shell">
-    @include('admin._nav')
-    <div class="editor-layout">
-        <header class="page-heading"><span class="section-code">ADMIN / KATEGORI / UBAH</span><h1>{{ $category->name }}</h1></header>
-        <form class="editor-form" method="POST" action="{{ route('admin.categories.update', $category) }}">
-            @csrf
-            @method('PUT')
-            @include('admin.categories._form', ['submitLabel' => 'Simpan perubahan'])
-        </form>
-    </div>
+<div class="mx-auto max-w-2xl">
+    <form method="POST" action="{{ route('admin.categories.update', $category) }}"
+          class="rounded-2xl border border-ink-100 bg-white p-6 shadow-card sm:p-7">
+        @csrf
+        @method('PUT')
+        @include('admin.categories._form', ['submitLabel' => 'Simpan perubahan'])
+    </form>
 </div>
 @endsection

@@ -6,119 +6,61 @@
     <title>@yield('title', 'Terjadi kendala — '.config('app.name'))</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/formal.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/theme.css') }}">
-    <style>
-        .error-shell {
-            width: min(680px, calc(100% - 40px));
-            margin: 70px auto 80px;
-        }
-        .error-card {
-            background: var(--white);
-            border: 1px solid rgba(20, 22, 31, .07);
-            border-radius: 26px;
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-        }
-        .error-card .section-code {
-            display: block;
-            margin: 0;
-            padding: 15px 26px;
-            color: #eef0fb;
-            background: linear-gradient(90deg, #0b0d17, #1a2fa8);
-            border-radius: 0;
-            letter-spacing: .11em;
-        }
-        .error-body {
-            padding: clamp(32px, 6vw, 58px);
-        }
-        .error-code {
-            margin: 0;
-            font-size: clamp(72px, 12vw, 128px);
-            font-weight: 800;
-            line-height: 1;
-            letter-spacing: -.045em;
-            background: linear-gradient(120deg, var(--blue), #7b5cff);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .error-body h1 {
-            max-width: 520px;
-            margin: 18px 0 14px;
-            font-size: clamp(24px, 3.4vw, 34px);
-            font-weight: 800;
-            line-height: 1.15;
-            letter-spacing: -.02em;
-        }
-        .error-body > p {
-            max-width: 480px;
-            margin: 0 0 32px;
-            color: var(--gray);
-            font-size: 14px;
-            line-height: 1.7;
-        }
-        .error-actions {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            margin-top: 32px;
-        }
-        .error-hint {
-            margin: 44px 0 0;
-            padding-top: 20px;
-            color: var(--gray);
-            border-top: 1px solid var(--line);
-            font-size: 10px;
-            line-height: 1.7;
-            letter-spacing: .04em;
-            text-transform: uppercase;
-        }
-        @media (max-width: 520px) {
-            .error-shell { width: calc(100% - 24px); margin-top: 36px; }
-            .error-body { padding: 30px 22px; }
-            .error-actions { align-items: stretch; flex-direction: column; gap: 14px; }
-            .error-actions .fit { width: 100%; }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.icons')
 </head>
-<body class="error-page">
-    <div class="scene-orbs" aria-hidden="true">
-        <i></i><i></i><i></i><i></i>
-    </div>
+<body class="flex min-h-screen flex-col bg-[#f4f6fb] text-ink-900 antialiased">
 
-    <header class="site-header">
-        <a class="brand" href="{{ route('home') }}" aria-label="{{ config('app.name') }}, halaman katalog">
-            <span class="brand-mark" aria-hidden="true">{{ strtoupper(substr(config('app.name'), 0, 1)) }}</span>
-            <span class="brand-name">{{ strtoupper(config('app.name')) }}</span>
+<header class="border-b border-ink-100 bg-white">
+    <div class="container-page flex h-16 items-center">
+        <a href="{{ route('home') }}" class="flex items-center gap-2" aria-label="{{ config('app.name') }}, halaman katalog">
+            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black text-white">N</span>
+            <span class="text-lg font-extrabold">NADI<span class="text-brand-600">PLAY</span></span>
         </a>
-    </header>
+    </div>
+</header>
 
-    <main>
-        <section class="error-shell">
-            <div class="error-card">
-                <span class="section-code">{{ strtoupper(config('app.name')) }} / {{ strtoupper($__env->yieldContent('code', 'ERROR')) }}</span>
-                <div class="error-body">
-                    <h2 class="error-code">@yield('code', 'Error')</h2>
-                    <h1>@yield('message', 'Terjadi kendala')</h1>
-                    <p>@yield('description', 'Halaman tidak dapat dimuat. Silakan coba lagi atau kembali ke halaman utama.')</p>
-                    <div class="error-actions">
-                        <a class="primary-button button-link fit" href="{{ route('home') }}">Kembali ke katalog</a>
-                        <a class="text-link" href="{{ route('home') }}">Halaman utama</a>
-                    </div>
-                    @hasSection('hint')
-                        <p class="error-hint">@yield('hint')</p>
-                    @endif
-                </div>
+<main class="flex flex-1 items-center justify-center px-4 py-14">
+    <div class="w-full max-w-xl overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-lift">
+        <div class="bg-gradient-to-r from-ink-950 to-brand-900 px-6 py-4 sm:px-8">
+            <span class="text-xs font-bold uppercase tracking-widest text-white/70">{{ strtoupper(config('app.name')) }} / ERROR</span>
+        </div>
+
+        <div class="p-7 sm:p-10">
+            <h1 class="bg-gradient-to-br from-brand-600 to-brand-900 bg-clip-text text-6xl font-black leading-none tracking-tighter text-transparent sm:text-7xl">
+                @yield('code', 'Error')
+            </h1>
+            <h2 class="mt-4 text-2xl font-extrabold tracking-tight text-ink-900">@yield('message', 'Terjadi kendala')</h2>
+            <p class="mt-3 text-sm leading-relaxed text-ink-500">
+                @yield('description', 'Halaman tidak dapat dimuat. Silakan coba lagi atau kembali ke halaman utama.')
+            </p>
+
+            <div class="mt-7 flex flex-wrap items-center gap-3">
+                <a href="{{ route('home') }}"
+                   class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow-left"/></svg>
+                    Kembali ke katalog
+                </a>
+                <a href="{{ route('categories.index') }}"
+                   class="rounded-xl border border-ink-200 px-5 py-3 text-sm font-bold text-ink-600 transition hover:border-brand-300 hover:text-brand-700">
+                    Lihat kategori
+                </a>
             </div>
-        </section>
-    </main>
 
-    <footer class="site-footer">
-        <span>{{ strtoupper(config('app.name')) }} / TOKO ONLINE</span>
+            @hasSection('hint')
+                <p class="mt-7 border-t border-ink-100 pt-5 text-xs uppercase tracking-wide text-ink-400">@yield('hint')</p>
+            @endif
+        </div>
+    </div>
+</main>
+
+<footer class="border-t border-ink-100 bg-white">
+    <div class="container-page flex flex-col gap-2 py-5 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between">
+        <span class="uppercase tracking-wide">NADI PLAY / GAMING, DIECAST &amp; HOBI</span>
         <span>Dikembangkan oleh Rafi Pandya P &copy; {{ now()->year }}</span>
-    </footer>
+    </div>
+</footer>
+
 </body>
 </html>
