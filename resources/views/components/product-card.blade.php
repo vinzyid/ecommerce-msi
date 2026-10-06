@@ -1,6 +1,9 @@
 @php
-    $rating = $product->rating_avg ?? $product->averageRating();
-    $reviewCount = $product->reviews_count ?? $product->reviews()->count();
+    // Pakai nilai yang sudah dihitung lewat withAvg/withCount (hindari query N+1).
+    $rating = $product->reviews_avg_rating !== null
+        ? round((float) $product->reviews_avg_rating, 1)
+        : null;
+    $reviewCount = (int) ($product->reviews_count ?? 0);
     $wishlisted = $wishlistedProductIds ?? [];
     $isWishlisted = in_array($product->id, $wishlisted, true);
     $sold = max(3, ($product->id * 17) % 240);

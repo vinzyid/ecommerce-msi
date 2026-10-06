@@ -97,6 +97,14 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Koneksi persisten + prepared statement untuk mengurangi overhead
+            // ke database cloud (Neon). ATTR_PERSISTENT menahan koneksi agar
+            // tidak buka-tutup tiap request; ATTR_EMULATE_PREPARES=false pakai
+            // prepared statement native (aman untuk PgBouncer transaction mode).
+            'options' => extension_loaded('pdo_pgsql') ? [
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false),
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ] : [],
         ],
 
         'sqlsrv' => [
