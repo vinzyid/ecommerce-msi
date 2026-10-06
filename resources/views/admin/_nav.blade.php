@@ -6,6 +6,7 @@
         ['route' => 'admin.orders.index', 'match' => 'admin.orders.*', 'label' => 'Pesanan', 'icon' => 'i-receipt'],
         ['route' => 'admin.users.index', 'match' => 'admin.users.*', 'label' => 'Pengguna', 'icon' => 'i-users'],
         ['route' => 'admin.vouchers.index', 'match' => 'admin.vouchers.*', 'label' => 'Voucher', 'icon' => 'i-ticket'],
+        ['route' => 'admin.chatbot.index', 'match' => 'admin.chatbot.*', 'label' => 'Chatbot AI', 'icon' => 'i-bolt'],
     ];
 @endphp
 

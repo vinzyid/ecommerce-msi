@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{{ config('app.name') }}, toko online perlengkapan gaming, diecast, dan hobi koleksi.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name').' — Perlengkapan Gaming, Diecast & Hobi')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +25,7 @@
 
             <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2" aria-label="{{ config('app.name') }}, halaman utama">
                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black text-white shadow-sm">N</span>
-                <span class="hidden text-lg font-extrabold tracking-tight text-ink-900 sm:block">NADI<span class="text-brand-600">PLAY</span></span>
+                <span class="hidden text-lg font-extrabold tracking-tight text-ink-900 sm:block">Vinzy<span class="text-brand-600">Play</span></span>
             </a>
 
             <form method="GET" action="{{ route('home') }}" role="search" class="relative hidden flex-1 md:block">
@@ -144,7 +145,7 @@
     <div data-mobile-backdrop class="absolute inset-0 bg-ink-950/50 backdrop-blur-sm"></div>
     <aside class="absolute left-0 top-0 h-full w-72 max-w-[80%] overflow-y-auto bg-white p-5 shadow-lift">
         <div class="mb-6 flex items-center justify-between">
-            <span class="text-lg font-extrabold">NADI<span class="text-brand-600">PLAY</span></span>
+            <span class="text-lg font-extrabold">Vinzy<span class="text-brand-600">Play</span></span>
             <button type="button" data-mobile-close class="flex h-9 w-9 items-center justify-center rounded-xl text-ink-500 hover:bg-ink-50" aria-label="Tutup menu">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><use href="#i-close"/></svg>
             </button>
@@ -214,7 +215,7 @@
         <div>
             <a href="{{ route('home') }}" class="flex items-center gap-2">
                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black text-white">N</span>
-                <span class="text-lg font-extrabold">NADI<span class="text-brand-600">PLAY</span></span>
+                <span class="text-lg font-extrabold">Vinzy<span class="text-brand-600">Play</span></span>
             </a>
             <p class="mt-4 text-sm leading-relaxed text-ink-500">
                 Toko online perlengkapan gaming, diecast, dan hobi koleksi. Pilihan gear untuk main, kerja, dan koleksi.
@@ -222,7 +223,7 @@
             <ul class="mt-5 space-y-2.5 text-sm text-ink-500">
                 <li class="flex gap-2"><b class="min-w-16 text-ink-700">Kota</b><span>Yogyakarta, DI Yogyakarta</span></li>
                 <li class="flex gap-2"><b class="min-w-16 text-ink-700">Telepon</b><a href="tel:+6281234567890" class="hover:text-brand-700">+62 812-3456-7890</a></li>
-                <li class="flex gap-2"><b class="min-w-16 text-ink-700">Email</b><a href="mailto:halo@nadiplay.test" class="hover:text-brand-700">halo@nadiplay.test</a></li>
+                <li class="flex gap-2"><b class="min-w-16 text-ink-700">Email</b><a href="mailto:halo@vinzyplay.test" class="hover:text-brand-700">halo@vinzyplay.test</a></li>
             </ul>
         </div>
 
@@ -257,11 +258,13 @@
 
     <div class="border-t border-ink-100">
         <div class="container-page flex flex-col gap-2 py-5 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between">
-            <span class="uppercase tracking-wide">NADI PLAY &bull; GAMING, DIECAST &amp; HOBI</span>
+            <span class="uppercase tracking-wide">VINZYPLAY &bull; GAMING, DIECAST &amp; HOBI</span>
             <span>Dikembangkan oleh Rafi Pandya P &copy; {{ now()->year }}</span>
         </div>
     </div>
 </footer>
+
+@include('partials.chatbot')
 
 </body>
 </html>

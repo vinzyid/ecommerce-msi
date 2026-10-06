@@ -51,7 +51,7 @@
                 <h2 class="mt-4 text-base font-bold text-ink-900">Hubungi kami</h2>
                 <ul class="mt-2 space-y-1.5 text-sm text-ink-600">
                     <li>Telepon: <a href="tel:+6281234567890" class="font-semibold text-brand-600 hover:text-brand-700">+62 812-3456-7890</a></li>
-                    <li>Email: <a href="mailto:halo@nadiplay.test" class="font-semibold text-brand-600 hover:text-brand-700">halo@nadiplay.test</a></li>
+                    <li>Email: <a href="mailto:halo@vinzyplay.test" class="font-semibold text-brand-600 hover:text-brand-700">halo@vinzyplay.test</a></li>
                     <li>Jam layanan: Senin–Jumat, 08.00–22.00</li>
                 </ul>
             </article>

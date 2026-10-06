@@ -18,7 +18,7 @@
     <aside class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-ink-100 bg-white lg:flex">
         <div class="flex h-16 items-center gap-2 border-b border-ink-100 px-5">
             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black text-white">N</span>
-            <span class="text-base font-extrabold">NADI<span class="text-brand-600">PLAY</span></span>
+            <span class="text-base font-extrabold">Vinzy<span class="text-brand-600">Play</span></span>
         </div>
         @include('admin._nav')
         <div class="mt-auto border-t border-ink-100 p-3">
@@ -107,7 +107,7 @@
     <div data-mobile-backdrop class="absolute inset-0 bg-ink-950/50 backdrop-blur-sm"></div>
     <aside class="absolute left-0 top-0 flex h-full w-64 max-w-[80%] flex-col bg-white shadow-lift">
         <div class="flex h-16 items-center justify-between border-b border-ink-100 px-5">
-            <span class="text-base font-extrabold">NADI<span class="text-brand-600">PLAY</span></span>
+            <span class="text-base font-extrabold">Vinzy<span class="text-brand-600">Play</span></span>
             <button type="button" data-mobile-close class="flex h-9 w-9 items-center justify-center rounded-xl text-ink-500 hover:bg-ink-50" aria-label="Tutup menu">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><use href="#i-close"/></svg>
             </button>

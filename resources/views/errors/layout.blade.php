@@ -16,7 +16,7 @@
     <div class="container-page flex h-16 items-center">
         <a href="{{ route('home') }}" class="flex items-center gap-2" aria-label="{{ config('app.name') }}, halaman katalog">
             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black text-white">N</span>
-            <span class="text-lg font-extrabold">NADI<span class="text-brand-600">PLAY</span></span>
+            <span class="text-lg font-extrabold">Vinzy<span class="text-brand-600">Play</span></span>
         </a>
     </div>
 </header>
@@ -57,7 +57,7 @@
 
 <footer class="border-t border-ink-100 bg-white">
     <div class="container-page flex flex-col gap-2 py-5 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between">
-        <span class="uppercase tracking-wide">NADI PLAY / GAMING, DIECAST &amp; HOBI</span>
+        <span class="uppercase tracking-wide">VINZYPLAY / GAMING, DIECAST &amp; HOBI</span>
         <span>Dikembangkan oleh Rafi Pandya P &copy; {{ now()->year }}</span>
     </div>
 </footer>

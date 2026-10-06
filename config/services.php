@@ -35,4 +35,25 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Chatbot (OpenAI-compatible API)
+    |--------------------------------------------------------------------------
+    |
+    | Konfigurasi untuk fitur chatbot customer. Mendukung endpoint apa pun
+    | yang kompatibel dengan format OpenAI Chat Completions (OpenAI,
+    | OpenRouter, DeepSeek, Groq, dsb). Cukup ubah base_url & model.
+    |
+    */
+
+    'chatbot' => [
+        'api_key' => env('CHATBOT_API_KEY'),
+        'base_url' => env('CHATBOT_BASE_URL', 'https://api.openai.com/v1'),
+        'model' => env('CHATBOT_MODEL', 'gpt-4o-mini'),
+        'timeout' => (int) env('CHATBOT_TIMEOUT', 30),
+        'cache_ttl' => (int) env('CHATBOT_CACHE_TTL', 60), // menit
+        'max_tokens' => (int) env('CHATBOT_MAX_TOKENS', 600),
+        'temperature' => (float) env('CHATBOT_TEMPERATURE', 0.3),
+    ],
+
 ];

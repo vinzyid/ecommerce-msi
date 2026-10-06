@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\ChatbotController as AdminChatbotController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReviewController;
@@ -22,6 +24,9 @@ Route::view('/tentang', 'pages.about')->name('about');
 Route::get('/promo', [CatalogController::class, 'promo'])->name('promo');
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
 Route::get('/products/{product}', [CatalogController::class, 'show'])->name('products.show');
+
+// Chatbot konsumen (boleh diakses tanpa login).
+Route::post('/chatbot', [ChatbotController::class, 'ask'])->name('chatbot.ask');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
@@ -69,4 +74,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
+
+    Route::get('/chatbot', [AdminChatbotController::class, 'index'])->name('chatbot.index');
+    Route::delete('/chatbot/purge', [AdminChatbotController::class, 'purge'])->name('chatbot.purge');
+    Route::delete('/chatbot/{chatbotMessage}', [AdminChatbotController::class, 'destroy'])->name('chatbot.destroy');
 });

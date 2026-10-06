@@ -127,4 +127,183 @@ document.addEventListener('DOMContentLoaded', () => {
             observer.observe(el);
         });
     }
+
+    /* ---------- Chatbot konsumen ---------- */
+    initChatbot();
 });
+
+function initChatbot() {
+    const root = document.querySelector('[data-chatbot]');
+    if (!root) return;
+
+    const panel = root.querySelector('[data-chatbot-panel]');
+    const toggle = root.querySelector('[data-chatbot-toggle]');
+    const closeBtn = root.querySelector('[data-chatbot-close]');
+    const form = root.querySelector('[data-chatbot-form]');
+    const input = root.querySelector('[data-chatbot-input]');
+    const sendBtn = root.querySelector('[data-chatbot-send]');
+    const messages = root.querySelector('[data-chatbot-messages]');
+    const suggestions = root.querySelector('[data-chatbot-suggestions]');
+    const iconOpen = root.querySelector('[data-chatbot-icon-open]');
+    const iconClose = root.querySelector('[data-chatbot-icon-close]');
+
+    const endpoint = root.dataset.chatbotUrl || '/chatbot';
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const storeKey = 'chatbot_history_v1';
+
+    let busy = false;
+
+    /* --- Buka / tutup panel --- */
+    const openPanel = () => {
+        panel.classList.remove('pointer-events-none', 'opacity-0', 'translate-y-4', 'translate-y-2');
+        panel.classList.add('pointer-events-auto', 'opacity-100', 'translate-y-0');
+        iconOpen?.classList.add('hidden');
+        iconClose?.classList.remove('hidden');
+        toggle?.setAttribute('aria-label', 'Tutup asisten chat');
+        input?.focus();
+    };
+    const closePanel = () => {
+        panel.classList.add('pointer-events-none', 'opacity-0', 'translate-y-4', 'translate-y-2');
+        panel.classList.remove('pointer-events-auto', 'opacity-100', 'translate-y-0');
+        iconOpen?.classList.remove('hidden');
+        iconClose?.classList.add('hidden');
+        toggle?.setAttribute('aria-label', 'Buka asisten chat');
+    };
+    const isOpen = () => panel.classList.contains('opacity-100');
+
+    toggle?.addEventListener('click', () => (isOpen() ? closePanel() : openPanel()));
+    closeBtn?.addEventListener('click', closePanel);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isOpen()) closePanel();
+    });
+
+    /* --- Riwayat disimpan lokal di browser (tidak boros token/DB) --- */
+    const loadHistory = () => {
+        try {
+            return JSON.parse(localStorage.getItem(storeKey) || '[]');
+        } catch {
+            return [];
+        }
+    };
+    const saveHistory = (history) => {
+        // Batasi 20 pesan terakhir agar tidak menumpuk.
+        localStorage.setItem(storeKey, JSON.stringify(history.slice(-20)));
+    };
+
+    /* --- Render pesan --- */
+    const escapeHtml = (text) =>
+        text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    const formatText = (text) =>
+        escapeHtml(text)
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+
+    const bubble = (text, who) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex gap-2';
+
+        if (who === 'user') {
+            wrap.className += ' justify-end';
+            wrap.innerHTML = `<div class="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-600 px-3 py-2 text-white shadow-sm">${formatText(text)}</div>`;
+        } else {
+            wrap.innerHTML =
+                `<span class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-100 text-brand-700"><svg class="h-4 w-4"><use href="#i-headset"/></svg></span>` +
+                `<div class="max-w-[85%] rounded-2xl rounded-tl-sm border border-ink-100 bg-white px-3 py-2 text-ink-700 shadow-sm">${formatText(text)}</div>`;
+        }
+
+        messages.appendChild(wrap);
+        messages.scrollTop = messages.scrollHeight;
+        return wrap;
+    };
+
+    const loading = () => {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex gap-2';
+        wrap.innerHTML =
+            `<span class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-100 text-brand-700"><svg class="h-4 w-4"><use href="#i-headset"/></svg></span>` +
+            `<div class="rounded-2xl rounded-tl-sm border border-ink-100 bg-white px-3 py-2 text-ink-400 shadow-sm">Sedang mengetik…</div>`;
+        messages.appendChild(wrap);
+        messages.scrollTop = messages.scrollHeight;
+        return wrap;
+    };
+
+    /* --- Pulihkan riwayat --- */
+    loadHistory().forEach((m) => bubble(m.text, m.who));
+
+    /* --- Kirim pertanyaan --- */
+    const send = async (question) => {
+        const text = (question ?? input.value).trim();
+        if (!text || busy) return;
+
+        busy = true;
+        sendBtn.disabled = true;
+        if (!question) input.value = '';
+        input.style.height = 'auto';
+
+        const history = loadHistory();
+        history.push({ who: 'user', text });
+        saveHistory(history);
+        bubble(text, 'user');
+
+        const loader = loading();
+
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ question: text }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            loader.remove();
+
+            if (!res.ok || data.error) {
+                bubble(data.error || 'Maaf, terjadi kesalahan. Coba lagi ya.', 'bot');
+                return;
+            }
+
+            bubble(data.answer, 'bot');
+            const h2 = loadHistory();
+            h2.push({ who: 'bot', text: data.answer });
+            saveHistory(h2);
+        } catch {
+            loader.remove();
+            bubble('Koneksi bermasalah. Periksa internetmu lalu coba lagi.', 'bot');
+        } finally {
+            busy = false;
+            sendBtn.disabled = false;
+            input.focus();
+        }
+    };
+
+    form?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        send();
+    });
+
+    /* --- Enter kirim, Shift+Enter baris baru --- */
+    input?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            send();
+        }
+    });
+
+    /* --- Auto-tinggi textarea --- */
+    input?.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(input.scrollHeight, 96)}px`;
+    });
+
+    /* --- Saran cepat --- */
+    suggestions?.querySelectorAll('[data-chatbot-suggest]').forEach((btn) => {
+        btn.addEventListener('click', () => send(btn.dataset.chatbotSuggest));
+    });
+}
