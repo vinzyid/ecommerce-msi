@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Admin Ringkasan — '.config('app.name'))
+@section('title', 'Ringkasan — '.config('app.name'))
 @section('heading', 'Ringkasan')
 
 @section('content')

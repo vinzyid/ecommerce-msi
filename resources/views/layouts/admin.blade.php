@@ -40,10 +40,7 @@
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><use href="#i-menu"/></svg>
                 </button>
 
-                <div class="min-w-0">
-                    <span class="text-[11px] font-bold uppercase tracking-wide text-brand-600">Panel Admin</span>
-                    <h1 class="truncate text-base font-extrabold text-ink-900">@yield('heading', 'Ringkasan')</h1>
-                </div>
+                <h1 class="min-w-0 truncate text-lg font-extrabold text-ink-900">@yield('heading', 'Ringkasan')</h1>
 
                 <div class="ml-auto flex items-center gap-2">
                     <a href="{{ route('home') }}"

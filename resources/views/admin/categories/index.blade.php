@@ -5,7 +5,7 @@
 
 @section('content')
 <div class="flex flex-wrap items-center justify-between gap-3">
-    <p class="text-sm text-ink-500">Kelola kategori yang tampil di katalog toko.</p>
+    <p class="text-sm text-ink-500">Kategori yang muncul di katalog toko.</p>
     <a href="{{ route('admin.categories.create') }}"
        class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700">
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><use href="#i-plus"/></svg>

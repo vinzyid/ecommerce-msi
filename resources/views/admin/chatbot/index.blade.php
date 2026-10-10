@@ -9,7 +9,7 @@
         ['Pertanyaan unik', number_format($stats['total_entries'], 0, ',', '.'), 'i-receipt', 'text-brand-600 bg-brand-50'],
         ['Dijawab dari cache', number_format($stats['total_hits'], 0, ',', '.'), 'i-refresh', 'text-success-600 bg-success-500/15'],
         ['Hit rate', $stats['hit_rate'].'%', 'i-chart', 'text-accent-600 bg-accent-500/15'],
-        ['Estimasi token dihemat', number_format($stats['tokens_saved'], 0, ',', '.'), 'i-bolt', 'text-ink-700 bg-ink-100'],
+        ['Token dihemat', number_format($stats['tokens_saved'], 0, ',', '.'), 'i-bolt', 'text-ink-700 bg-ink-100'],
     ];
 @endphp
 
@@ -17,12 +17,12 @@
 <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-brand-100 bg-brand-50/60 px-4 py-3 text-sm">
     <span class="inline-flex items-center gap-2 font-semibold text-brand-800">
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bolt"/></svg>
-        Model aktif: <code class="rounded-md bg-white px-2 py-0.5 text-xs font-black text-brand-700">{{ $stats['model'] }}</code>
+        Model: <code class="rounded-md bg-white px-2 py-0.5 text-xs font-black text-brand-700">{{ $stats['model'] }}</code>
     </span>
     <span class="text-ink-400">•</span>
-    <span class="text-ink-600">Cache berlaku <strong>{{ $stats['cache_ttl'] }} menit</strong></span>
+    <span class="text-ink-600">Cache {{ $stats['cache_ttl'] }} menit</span>
     <span class="text-ink-400">•</span>
-    <span class="text-ink-600">{{ $stats['fresh_entries'] }} entri aktif, {{ $stats['stale_entries'] }} kedaluwarsa</span>
+    <span class="text-ink-600">{{ $stats['fresh_entries'] }} aktif, {{ $stats['stale_entries'] }} kedaluwarsa</span>
 </div>
 
 {{-- Kartu statistik --}}
@@ -42,13 +42,13 @@
     @endforeach
 </div>
 
-{{-- Penjelasan green computing --}}
+{{-- Ringkasan penghematan --}}
 <div class="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-success-500/20 bg-success-500/10 px-4 py-3 text-sm text-success-700">
     <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bolt"/></svg>
     <p>
-        Dengan cache ini, <strong>{{ number_format($stats['total_hits'], 0, ',', '.') }} pertanyaan</strong> tidak perlu memanggil AI lagi
-        &mdash; menghemat sekitar <strong>{{ number_format($stats['tokens_saved'], 0, ',', '.') }} token</strong>
-        (≈ {{ number_format($stats['kwh_saved'], 3, ',', '.') }} kWh energi komputasi).
+        {{ number_format($stats['total_hits'], 0, ',', '.') }} pertanyaan dijawab dari cache,
+        hemat {{ number_format($stats['tokens_saved'], 0, ',', '.') }} token
+        ({{ number_format($stats['kwh_saved'], 3, ',', '.') }} kWh).
     </p>
 </div>
 

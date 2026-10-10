@@ -108,7 +108,7 @@
                 Simpan peran
             </button>
             @if ($isSelf)
-                <p class="mt-2.5 text-xs text-ink-400">Peran akun kamu sendiri tidak dapat diubah dari halaman ini.</p>
+                <p class="mt-2.5 text-xs text-ink-400">Kamu tidak bisa mengubah peran akun sendiri di sini.</p>
             @endif
         </form>
 
