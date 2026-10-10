@@ -14,6 +14,30 @@
 </head>
 <body class="min-h-screen bg-[#f4f6fb] text-ink-900 antialiased @yield('body-class')">
 
+{{-- Top Utility Bar (khas Tokopedia & Shopee) --}}
+<div class="hidden border-b border-ink-100 bg-ink-50/90 text-[11px] font-medium text-ink-500 md:block">
+    <div class="container-page flex h-8 items-center justify-between">
+        <div class="flex items-center gap-4">
+            <span class="inline-flex items-center gap-1.5 transition hover:text-brand-600">
+                <svg class="h-3.5 w-3.5 text-brand-600"><use href="#i-headset"/></svg>
+                Download VinzyPlay App
+            </span>
+            <span class="text-ink-200">|</span>
+            <span class="transition hover:text-brand-600">Mitra Seller</span>
+            <span class="text-ink-200">|</span>
+            <a href="{{ route('about') }}" class="transition hover:text-brand-600">Tentang VinzyPlay</a>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-600">
+                <svg class="h-3.5 w-3.5"><use href="#i-truck"/></svg>
+                Bebas Ongkir Seluruh Indonesia
+            </span>
+            <span class="text-ink-200">|</span>
+            <a href="{{ route('about') }}" class="transition hover:text-brand-600">Bantuan &amp; CS 24/7</a>
+        </div>
+    </div>
+</div>
+
 <header class="sticky top-0 z-40 border-b border-ink-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
     <div class="container-page">
         <div class="flex h-16 items-center gap-3 md:gap-5">
@@ -28,18 +52,32 @@
                 <span class="hidden text-lg font-extrabold tracking-tight text-ink-900 sm:block">Vinzy<span class="text-brand-600">Play</span></span>
             </a>
 
-            <form method="GET" action="{{ route('home') }}" role="search" class="relative hidden flex-1 md:block">
-                <label class="sr-only" for="site-search">Cari produk</label>
-                <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-ink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><use href="#i-search"/></svg>
-                <input id="site-search" name="q" type="search"
-                       value="{{ request()->routeIs('home') ? request('q') : '' }}"
-                       placeholder="Cari keyboard, diecast, headset..."
-                       class="w-full rounded-xl border border-ink-200 bg-ink-50 py-2.5 pl-10 pr-24 text-sm outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20">
-                <button type="submit"
-                        class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700">
-                    Cari
-                </button>
-            </form>
+            <div class="relative hidden flex-1 md:block">
+                <form method="GET" action="{{ route('home') }}" role="search" class="relative">
+                    <label class="sr-only" for="site-search">Cari produk</label>
+                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-ink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><use href="#i-search"/></svg>
+                    <input id="site-search" name="q" type="search"
+                           value="{{ request('q') }}"
+                           placeholder="Cari keyboard mechanical, diecast, headset gaming..."
+                           class="w-full rounded-xl border border-ink-200 bg-ink-50 py-2.5 pl-10 pr-24 text-sm outline-none transition focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20">
+                    <button type="submit"
+                            class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700">
+                        Cari
+                    </button>
+                </form>
+                <div class="mt-1 flex items-center gap-2 overflow-hidden text-[11px] text-ink-400">
+                    <span class="shrink-0 font-semibold text-ink-500">Populer:</span>
+                    <a href="{{ route('home', ['q' => 'PlayStation 5']) }}" class="truncate transition hover:text-brand-600">PlayStation 5</a>
+                    <span class="text-ink-200">&bull;</span>
+                    <a href="{{ route('home', ['q' => 'RTX 5060']) }}" class="truncate transition hover:text-brand-600">RTX 5060 Ti</a>
+                    <span class="text-ink-200">&bull;</span>
+                    <a href="{{ route('home', ['q' => 'Mechanical Keyboard']) }}" class="truncate transition hover:text-brand-600">Neo75 Keyboard</a>
+                    <span class="text-ink-200">&bull;</span>
+                    <a href="{{ route('home', ['q' => 'Hot Wheels']) }}" class="truncate transition hover:text-brand-600">Hot Wheels</a>
+                    <span class="text-ink-200">&bull;</span>
+                    <a href="{{ route('home', ['q' => 'HyperX']) }}" class="truncate transition hover:text-brand-600">HyperX</a>
+                </div>
+            </div>
 
             <div class="ml-auto flex items-center gap-1.5">
                 @auth
@@ -104,7 +142,7 @@
             <label class="sr-only" for="site-search-mobile">Cari produk</label>
             <div class="relative">
                 <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-ink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><use href="#i-search"/></svg>
-                <input id="site-search-mobile" name="q" type="search" value="{{ request()->routeIs('home') ? request('q') : '' }}"
+                <input id="site-search-mobile" name="q" type="search" value="{{ request('q') }}"
                        placeholder="Cari produk gaming, diecast, hobi..."
                        class="w-full rounded-xl border border-ink-200 bg-ink-50 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-brand-500 focus:bg-white focus:ring-2 focus:ring-brand-500/20">
             </div>
@@ -188,29 +226,61 @@
     </aside>
 </div>
 
-@if (session('success') || session('status'))
-    <div class="border-b border-success-500/20 bg-success-500/10">
-        <div class="container-page flex items-center gap-2.5 py-3 text-sm font-semibold text-success-600">
-            <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-check-circle"/></svg>
-            {{ session('success') ?? session('status') }}
-        </div>
-    </div>
-@endif
-
-@if (session('error'))
-    <div class="border-b border-danger-500/20 bg-danger-500/10">
-        <div class="container-page flex items-center gap-2.5 py-3 text-sm font-semibold text-danger-600">
-            <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><use href="#i-info"/></svg>
-            {{ session('error') }}
-        </div>
-    </div>
-@endif
-
 <main class="min-h-[60vh] pb-16">
     @yield('content')
 </main>
 
-<footer class="border-t border-ink-100 bg-white">
+{{-- Container Notifikasi Toast (Pop-up + Suara) --}}
+<div id="toast-container" class="pointer-events-none fixed right-3 top-3 z-[9999] flex w-[calc(100vw-1.5rem)] max-w-sm flex-col gap-2.5 sm:right-5 sm:top-5"></div>
+
+{{-- Trigger data pesan dari session (dibaca oleh JS) --}}
+<div id="flash-data" class="hidden"
+     data-success="{{ session('success') ?? session('status') }}"
+     data-error="{{ session('error') }}"></div>
+
+<footer class="border-t border-ink-100 bg-white pb-16 md:pb-0">
+    {{-- Banner Jaminan Belanja (Tokopedia / Shopee Style) --}}
+    <div class="border-b border-ink-100 bg-brand-50/50 py-6">
+        <div class="container-page grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div class="flex items-center gap-3">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm">
+                    <svg class="h-5.5 w-5.5"><use href="#i-shield"/></svg>
+                </span>
+                <div>
+                    <p class="text-xs font-bold text-ink-900 sm:text-sm">100% Original</p>
+                    <p class="text-[11px] text-ink-500">Semua produk resmi &amp; asli</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
+                    <svg class="h-5.5 w-5.5"><use href="#i-truck"/></svg>
+                </span>
+                <div>
+                    <p class="text-xs font-bold text-ink-900 sm:text-sm">Bebas Ongkir</p>
+                    <p class="text-[11px] text-ink-500">Belanja min. Rp300rb</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm">
+                    <svg class="h-5.5 w-5.5"><use href="#i-refresh"/></svg>
+                </span>
+                <div>
+                    <p class="text-xs font-bold text-ink-900 sm:text-sm">Retur 7 Hari</p>
+                    <p class="text-[11px] text-ink-500">Komplain mudah &amp; cepat</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-sm">
+                    <svg class="h-5.5 w-5.5"><use href="#i-headset"/></svg>
+                </span>
+                <div>
+                    <p class="text-xs font-bold text-ink-900 sm:text-sm">CS Siaga 24/7</p>
+                    <p class="text-[11px] text-ink-500">Respon ramah via AI &amp; tim</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container-page grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
             <a href="{{ route('home') }}" class="flex items-center gap-2">
@@ -218,51 +288,99 @@
                 <span class="text-lg font-extrabold">Vinzy<span class="text-brand-600">Play</span></span>
             </a>
             <p class="mt-4 text-sm leading-relaxed text-ink-500">
-                Toko online perlengkapan gaming, diecast, dan hobi koleksi. Pilihan gear untuk main, kerja, dan koleksi.
+                Marketplace spesialis perlengkapan gaming, diecast koleksi, dan hobi terlengkap dengan pengiriman ke seluruh Indonesia.
             </p>
-            <ul class="mt-5 space-y-2.5 text-sm text-ink-500">
-                <li class="flex gap-2"><b class="min-w-16 text-ink-700">Kota</b><span>Yogyakarta, DI Yogyakarta</span></li>
-                <li class="flex gap-2"><b class="min-w-16 text-ink-700">Telepon</b><a href="tel:+6281234567890" class="hover:text-brand-700">+62 812-3456-7890</a></li>
-                <li class="flex gap-2"><b class="min-w-16 text-ink-700">Email</b><a href="mailto:halo@vinzyplay.test" class="hover:text-brand-700">halo@vinzyplay.test</a></li>
+            <ul class="mt-5 space-y-2 text-sm text-ink-500">
+                <li class="flex items-center gap-2"><svg class="h-4 w-4 text-brand-600 shrink-0"><use href="#i-map-pin"/></svg><span>Yogyakarta, DI Yogyakarta</span></li>
+                <li class="flex items-center gap-2"><svg class="h-4 w-4 text-brand-600 shrink-0"><use href="#i-headset"/></svg><a href="tel:+6281234567890" class="hover:text-brand-700">+62 812-3456-7890</a></li>
             </ul>
         </div>
 
         <div>
-            <h3 class="text-sm font-bold uppercase tracking-wide text-ink-900">Kategori</h3>
-            <nav class="mt-4 space-y-2.5 text-sm text-ink-500">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-ink-900">Kategori Populer</h3>
+            <nav class="mt-4 space-y-2 text-sm text-ink-500">
                 @foreach (($footerCategories ?? collect()) as $category)
-                    <a href="{{ route('home', ['category' => $category->slug]) }}" class="block hover:text-brand-700">{{ $category->name }}</a>
+                    <a href="{{ route('home', ['category' => $category->slug]) }}" class="block transition hover:text-brand-700">{{ $category->name }}</a>
                 @endforeach
+                <a href="{{ route('categories.index') }}" class="inline-flex items-center gap-1 font-semibold text-brand-600 hover:text-brand-700">Lihat Semua &rarr;</a>
             </nav>
         </div>
 
         <div>
-            <h3 class="text-sm font-bold uppercase tracking-wide text-ink-900">Bantuan</h3>
-            <nav class="mt-4 space-y-2.5 text-sm text-ink-500">
-                <a href="{{ route('about') }}" class="block hover:text-brand-700">Tentang kami</a>
-                <a href="{{ route('promo') }}" class="block hover:text-brand-700">Promo berjalan</a>
-                <a href="{{ route('categories.index') }}" class="block hover:text-brand-700">Semua kategori</a>
-                <a href="{{ route('login') }}" class="block hover:text-brand-700">Masuk akun</a>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-ink-900">Bantuan &amp; Panduan</h3>
+            <nav class="mt-4 space-y-2 text-sm text-ink-500">
+                <a href="{{ route('about') }}" class="block transition hover:text-brand-700">Tentang VinzyPlay</a>
+                <a href="{{ route('promo') }}" class="block transition hover:text-brand-700">Katalog Promo &amp; Diskon</a>
+                <a href="{{ route('about') }}" class="block transition hover:text-brand-700">Syarat &amp; Ketentuan</a>
+                <a href="{{ route('about') }}" class="block transition hover:text-brand-700">Kebijakan Privasi</a>
+                <a href="{{ route('about') }}" class="block transition hover:text-brand-700">Panduan Pembayaran &amp; Retur</a>
             </nav>
         </div>
 
         <div>
-            <h3 class="text-sm font-bold uppercase tracking-wide text-ink-900">Pembayaran</h3>
-            <div class="mt-4 flex flex-wrap gap-2">
-                <span class="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600">COD</span>
-                <span class="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600">Transfer Bank</span>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-ink-900">Metode Pembayaran</h3>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-bold text-ink-700">BCA</span>
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-bold text-ink-700">Mandiri</span>
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-bold text-ink-700">BRI</span>
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-bold text-ink-700">BNI</span>
+                <span class="rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">QRIS</span>
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-bold text-ink-700">GoPay</span>
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-bold text-ink-700">ShopeePay</span>
+                <span class="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-700">COD</span>
             </div>
-            <p class="mt-4 text-xs text-ink-400">Pilih metode pembayaran saat checkout. Garansi resmi &amp; retur 7 hari.</p>
+
+            <h3 class="mt-5 text-sm font-bold uppercase tracking-wider text-ink-900">Jasa Pengiriman</h3>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-semibold text-ink-700">JNE Express</span>
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-semibold text-ink-700">SiCepat</span>
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-semibold text-ink-700">J&amp;T</span>
+                <span class="rounded-lg border border-ink-200 bg-ink-50 px-2 py-1 text-[11px] font-semibold text-ink-700">Anteraja</span>
+            </div>
         </div>
     </div>
 
-    <div class="border-t border-ink-100">
+    <div class="border-t border-ink-100 bg-ink-50/50">
         <div class="container-page flex flex-col gap-2 py-5 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between">
-            <span class="uppercase tracking-wide">VINZYPLAY &bull; GAMING, DIECAST &amp; HOBI</span>
-            <span>Dikembangkan oleh Rafi Pandya P &copy; {{ now()->year }}</span>
+            <span class="font-medium tracking-wide uppercase">&copy; {{ now()->year }} VINZYPLAY &bull; MARKETPLACE GAMING, DIECAST &amp; HOBI</span>
+            <span class="flex items-center gap-3">
+                <span>Keamanan SSL 256-Bit</span>
+                <span>&bull;</span>
+                <span>Terverifikasi Resmi</span>
+            </span>
         </div>
     </div>
 </footer>
+
+{{-- Bottom Mobile Navigation Bar (Tokopedia & Shopee Style) --}}
+<nav class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-ink-200 bg-white/95 px-2 py-2 text-center text-[10px] font-semibold text-ink-600 shadow-lift backdrop-blur md:hidden">
+    <a href="{{ route('home') }}" @class(['flex flex-col items-center gap-1 transition', 'text-brand-600 font-bold' => request()->routeIs('home')])>
+        <svg class="h-5 w-5"><use href="#i-store"/></svg>
+        <span>Beranda</span>
+    </a>
+    <a href="{{ route('categories.index') }}" @class(['flex flex-col items-center gap-1 transition', 'text-brand-600 font-bold' => request()->routeIs('categories.index')])>
+        <svg class="h-5 w-5"><use href="#i-grid"/></svg>
+        <span>Kategori</span>
+    </a>
+    <a href="{{ route('promo') }}" @class(['relative flex flex-col items-center gap-1 transition', 'text-danger-600 font-bold' => request()->routeIs('promo'), 'text-ink-600' => !request()->routeIs('promo')])>
+        <svg class="h-5 w-5 text-danger-500"><use href="#i-flame"/></svg>
+        <span class="text-danger-600">Promo</span>
+        <span class="absolute -top-0.5 right-1.5 h-2 w-2 rounded-full bg-danger-500"></span>
+    </a>
+    <a href="{{ route('cart.index') }}" @class(['relative flex flex-col items-center gap-1 transition', 'text-brand-600 font-bold' => request()->routeIs('cart.index')])>
+        <svg class="h-5 w-5"><use href="#i-cart"/></svg>
+        <span>Keranjang</span>
+        @auth
+            @if (($headerCartCount ?? 0) > 0)
+                <span class="absolute -top-1 right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-500 px-1 text-[9px] font-bold text-white">{{ $headerCartCount }}</span>
+            @endif
+        @endauth
+    </a>
+    <a href="{{ auth()->check() ? route('account') : route('login') }}" @class(['flex flex-col items-center gap-1 transition', 'text-brand-600 font-bold' => request()->routeIs('account', 'login')])>
+        <svg class="h-5 w-5"><use href="#i-user"/></svg>
+        <span>{{ auth()->check() ? 'Akun' : 'Masuk' }}</span>
+    </a>
+</nav>
 
 @include('partials.chatbot')
 

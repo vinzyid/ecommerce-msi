@@ -42,7 +42,8 @@ class ChatbotController extends Controller
     }
 
     /**
-     * Statistik cache: berapa token/listrik yang dihemat.
+     * Statistik GREEN COMPUTING: berapa token, energi listrik, dan emisi karbon yang dihemat
+     * lewat cache pertanyaan (termasuk pertanyaan yang mirip).
      *
      * Estimasi: rata-rata 1 panggilan AI memakai ~600 token output + prompt
      * produk (~2.500 token). Setiap "hit" menghemat ~3.100 token.
@@ -59,7 +60,10 @@ class ChatbotController extends Controller
         $tokensSaved = $totalHits * $tokensPerCall;
 
         // Estimasi energi: ~0,001 kWh per 1.000 token (kasar, referensi GPU inference).
-        $kwhSaved = round($tokensSaved / 1000 * 0.001, 3);
+        $kwhSaved = round($tokensSaved / 1000 * 0.001, 4);
+
+        // Estimasi emisi karbon: ~0,8 kg CO2e per kWh (grid listrik rata-rata).
+        $co2SavedGrams = round($kwhSaved * 800, 2);
 
         return [
             'total_entries' => $totalEntries,
@@ -69,6 +73,7 @@ class ChatbotController extends Controller
             'ai_calls' => $totalAiCalls,
             'tokens_saved' => $tokensSaved,
             'kwh_saved' => $kwhSaved,
+            'co2_saved_grams' => $co2SavedGrams,
             'cache_ttl' => (int) config('services.chatbot.cache_ttl', 60),
             'model' => (string) config('services.chatbot.model'),
             'hit_rate' => ($totalEntries + $totalHits) > 0

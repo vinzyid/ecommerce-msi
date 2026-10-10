@@ -53,7 +53,7 @@ class CartController extends Controller
         $cartItem->save();
 
         if ($request->boolean('buy_now')) {
-            return redirect()->route('checkout.create')->with('success', 'Produk siap dibeli.');
+            return redirect()->route('checkout.create', ['items' => $cartItem->id])->with('success', 'Produk siap dibeli.');
         }
 
         return redirect()->route('cart.index')->with('success', 'Produk ditambahkan ke cart.');

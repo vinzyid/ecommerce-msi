@@ -21,8 +21,21 @@ class ReviewController extends Controller
             'comment.max' => 'Ulasan maksimal 500 karakter.',
         ]);
 
+        $user = $request->user();
+
+        $hasPurchased = $user->is_admin || $user->orders()
+            ->where('status', '!=', 'cancelled')
+            ->whereHas('items', fn ($query) => $query->where('product_id', $product->id))
+            ->exists();
+
+        if (! $hasPurchased) {
+            return back()->withErrors([
+                'review' => 'Anda hanya dapat menulis ulasan untuk produk yang sudah pernah Anda beli.',
+            ]);
+        }
+
         Review::query()->updateOrCreate(
-            ['product_id' => $product->id, 'user_id' => $request->user()->id],
+            ['product_id' => $product->id, 'user_id' => $user->id],
             $validated + ['is_approved' => true]
         );
 

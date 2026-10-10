@@ -20,7 +20,7 @@ class ChatbotService
      *
      * @return array{answer: string, cached: bool}
      */
-    public function ask(string $question, ?int $userId = null): array
+    public function ask(string $question, ?int $userId = null, array $history = []): array
     {
         // Guard: tolak pertanyaan yang jelas di luar konteks toko sebelum memanggil AI.
         $rejection = $this->rejectOffTopic($question);
@@ -32,11 +32,48 @@ class ChatbotService
             ];
         }
 
-        $hash = ChatbotMessage::hashQuestion($question);
+        // Bersihkan history: batasi 8 pesan terakhir & hanya role/content yang valid.
+        $conversation = collect($history)
+            ->filter(fn ($m) => isset($m['role'], $m['content'])
+                && in_array($m['role'], ['user', 'assistant'], true)
+                && filled($m['content']))
+            ->slice(-8)
+            ->map(fn ($m) => [
+                'role' => $m['role'],
+                'content' => mb_substr((string) $m['content'], 0, 1000),
+            ])
+            ->values()
+            ->all();
 
-        $cached = ChatbotMessage::query()
-            ->where('question_hash', $hash)
-            ->first();
+        // Pertanyaan lanjutan (jawaban pendek / bergantung konteks) tidak boleh di-cache
+        // tanpa konteks, agar AI tidak salah menjawab "produk apa yang ingin dibandingkan?".
+        $isFollowUp = ! empty($conversation) && $this->isContextualFollowUp($question);
+
+        $hash = ChatbotMessage::hashQuestion($question);
+        $canonical = ChatbotMessage::canonicalKey($question);
+
+        $cached = null;
+
+        if (! $isFollowUp) {
+            // 1. Cek exact hash
+            $cached = ChatbotMessage::query()
+                ->where('question_hash', $hash)
+                ->first();
+
+            // 2. Jika tidak ada exact hash, cari exact canonical key
+            if (! $cached && filled($canonical)) {
+                $cached = ChatbotMessage::query()
+                    ->where('canonical_key', $canonical)
+                    ->where('expires_at', '>', now())
+                    ->latest('hit_count')
+                    ->first();
+            }
+
+            // 3. Jika masih belum ketemu, cari pertanyaan yang sangat mirip (similarity >= 65%)
+            if (! $cached && filled($canonical)) {
+                $cached = $this->findSimilarCachedMessage($question);
+            }
+        }
 
         if ($cached && $cached->isFresh()) {
             $cached->increment('hit_count');
@@ -47,7 +84,7 @@ class ChatbotService
             ];
         }
 
-        $answer = $this->askAi($question);
+        $answer = $this->askAi($question, $conversation);
 
         // Simpan / perbarui cache jawaban.
         ChatbotMessage::query()->updateOrCreate(
@@ -55,6 +92,7 @@ class ChatbotService
             [
                 'user_id' => $userId,
                 'question' => mb_substr($question, 0, 500),
+                'canonical_key' => mb_substr($canonical, 0, 255),
                 'answer' => $answer,
                 'from_ai' => true,
                 'hit_count' => 0,
@@ -66,6 +104,61 @@ class ChatbotService
             'answer' => $answer,
             'cached' => false,
         ];
+    }
+
+    /**
+     * Cari entri cache yang semantik/intinya sangat mirip (similarity >= 75%)
+     * agar langsung memanfaatkan cache Green Computing.
+     */
+    private function findSimilarCachedMessage(string $question): ?ChatbotMessage
+    {
+        $freshCandidates = ChatbotMessage::query()
+            ->where('expires_at', '>', now())
+            ->whereNotNull('answer')
+            ->latest('id')
+            ->limit(40)
+            ->get();
+
+        $bestCandidate = null;
+        $highestScore = 0.0;
+
+        foreach ($freshCandidates as $candidate) {
+            $score = $candidate->similarityTo($question);
+            if ($score >= 65.0 && $score > $highestScore) {
+                $highestScore = $score;
+                $bestCandidate = $candidate;
+            }
+        }
+
+        return $bestCandidate;
+    }
+
+    /**
+     * Deteksi apakah pesan user adalah respon lanjutan pendek yang bergantung pada
+     * konteks pesan sebelumnya (misal: "coba bandingkan juga", "iya boleh", "yang mana?").
+     */
+    private function isContextualFollowUp(string $question): bool
+    {
+        $q = mb_strtolower(trim($question));
+        $words = preg_split('/\s+/', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        // Kalimat pendek (<= 6 kata) atau mengandung frasa kelanjutan
+        if (count($words) <= 5) {
+            return true;
+        }
+
+        $followUpPatterns = [
+            '/\b(coba|bandingkan|bandingin|lanjut|iya|boleh|oke|ok|yaudah|yaudah deh|mau|tentu|yang mana|gimana|gmn)\b/u',
+            '/\b(tersebut|tadi|sebelumnya|itu|ini)\b/u',
+        ];
+
+        foreach ($followUpPatterns as $pattern) {
+            if (preg_match($pattern, $q)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -131,9 +224,11 @@ class ChatbotService
     }
 
     /**
-     * Panggil API AI (format OpenAI-compatible) dengan konteks produk.
+     * Panggil API AI (format OpenAI-compatible) dengan konteks produk & riwayat percakapan.
+     *
+     * @param  array<int, array{role: string, content: string}>  $conversation
      */
-    private function askAi(string $question): string
+    private function askAi(string $question, array $conversation = []): string
     {
         $apiKey = config('services.chatbot.api_key');
 
@@ -151,10 +246,11 @@ class ChatbotService
                 'model' => $model,
                 'temperature' => (float) config('services.chatbot.temperature', 0.3),
                 'max_tokens' => (int) config('services.chatbot.max_tokens', 600),
-                'messages' => [
-                    ['role' => 'system', 'content' => $this->systemPrompt()],
-                    ['role' => 'user', 'content' => $question],
-                ],
+                'messages' => array_merge(
+                    [['role' => 'system', 'content' => $this->systemPrompt()]],
+                    $conversation,
+                    [['role' => 'user', 'content' => $question]],
+                ),
             ]);
 
         if ($response->failed()) {
@@ -202,6 +298,34 @@ class ChatbotService
         - Harga dalam Rupiah. Tulis seperti "Rp1.289.000".
         - Jika stok 0, sebutkan bahwa stok sedang habis.
         - Jangan memberi janji di luar data (misal ongkir ke luar negeri, garansi khusus) yang tidak tertulis.
+
+        ATURAN MEMORI PERCAKAPAN (SANGAT PENTING — JANGAN LUPA KONTEKS):
+        - Kamu HARUS mengingat dan menyambung pembicaraan sebelumnya. Baca riwayat percakapan yang diberikan.
+        - Jika pesan sebelumnya kamu MENAWARKAN sesuatu (contoh: "Mau saya bandingkan dengan monitor 240Hz yang tersedia?", "Mau rekomendasi headset lain?", "Perlu saya bandingkan dengan PS4?"), dan user menjawab SINGKAT seperti "coba kamu bandingkan juga", "iya boleh", "coba", "lanjut", "yang mana bagus?", maka kamu WAJIB LANGSUNG MELAKUKAN hal tersebut.
+        - DILARANG menjawab "produk apa yang ingin kamu bandingkan?" jika produknya SUDAH JELAS dari percakapan sebelumnya. Langsung ambil produk yang kamu tawarkan tadi dan bandingkan!
+        - Jika kamu tidak yakin produk mana yang dimaksud, JANGAN tanya ulang kosong. Lihat lagi riwayat; jika masih ambigu, tawarkan 2-3 kandidat produk spesifik dari data toko dengan nama jelas.
+
+        ATURAN FORMAT JAWABAN (SANGAT PENTING):
+        - Jawaban ditampilkan di widget chat yang SEMPIT (lebar ponsel). Tulis agar MUDAH DIBACA.
+        - DILARANG KERAS memakai TABEL MARKDOWN (tabel yang memakai tanda pipe "|"). Tabel akan rusak, gepeng, dan tidak terbaca di layar chat. JANGAN pernah membuat tabel.
+        - Untuk PERBANDINGAN 2 produk atau lebih, WAJIB pakai format blok per-produk seperti contoh berikut:
+
+        **1. Nama Produk A**
+        - Harga: Rp...
+        - Stok: ...
+        - Keunggulan: ...
+        - Cocok untuk: ...
+
+        **2. Nama Produk B**
+        - Harga: Rp...
+        - Stok: ...
+        - Keunggulan: ...
+        - Cocok untuk: ...
+
+        **Rekomendasi:** (1-2 kalimat saran singkat sesuai kebutuhan atau anggaran pembeli).
+
+        - Gunakan **teks tebal** untuk nama produk/label, dan tanda "- " untuk daftar.
+        - Maksimal 4-5 poin per produk agar ringkas.
 
         GAYA:
         - Ramah, singkat, dan jelas dalam Bahasa Indonesia.

@@ -30,42 +30,53 @@
 <section class="container-page mt-5">
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         {{-- Galeri --}}
-        <div class="space-y-3">
-            <div class="relative overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card">
-                @if ($product->image_url)
-                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="aspect-square w-full object-cover">
-                @else
-                    <div class="flex aspect-square w-full flex-col items-center justify-center bg-ink-900 text-white">
-                        <span class="text-5xl font-black text-white/80">{{ strtoupper(substr($product->category->name, 0, 2)) }}</span>
-                        <span class="mt-2 text-xs text-white/50">{{ $product->sku }}</span>
-                    </div>
-                @endif
+        <div class="space-y-3 lg:sticky lg:top-36 lg:self-start">
+            <div class="group relative overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card">
+                <div class="relative aspect-square w-full overflow-hidden bg-ink-50">
+                    @if ($product->image_url)
+                        <img src="{{ $product->image_url }}" alt="{{ $product->name }}"
+                             class="h-full w-full cursor-zoom-in object-cover transition duration-500 group-hover:scale-105">
+                    @else
+                        <div class="flex h-full w-full flex-col items-center justify-center bg-ink-900 text-white">
+                            <span class="text-5xl font-black text-white/80">{{ strtoupper(substr($product->category->name, 0, 2)) }}</span>
+                            <span class="mt-2 text-xs text-white/50">{{ $product->sku }}</span>
+                        </div>
+                    @endif
 
-                @if ($product->hasDiscount())
-                    <span class="absolute left-4 top-4 rounded-lg bg-danger-500 px-3 py-1.5 text-sm font-bold text-white shadow">
-                        -{{ $product->discountPercent() }}%
+                    @if ($product->hasDiscount())
+                        <span class="absolute left-4 top-4 rounded-lg bg-danger-500 px-3 py-1.5 text-sm font-bold text-white shadow">
+                            -{{ $product->discountPercent() }}%
+                        </span>
+                    @endif
+                    @if ($product->badge)
+                        <span class="absolute right-4 top-4 rounded-lg bg-ink-900/85 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">{{ $product->badge }}</span>
+                    @endif
+
+                    {{-- Badge jaminan bawah --}}
+                    <span class="absolute bottom-4 left-4 inline-flex items-center gap-1 rounded-full bg-emerald-600/95 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm backdrop-blur">
+                        <svg class="h-3.5 w-3.5"><use href="#i-shield"/></svg>
+                        100% Original
                     </span>
-                @endif
-                @if ($product->badge)
-                    <span class="absolute right-4 top-4 rounded-lg bg-ink-900/85 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">{{ $product->badge }}</span>
-                @endif
+                </div>
             </div>
 
-            @if ($product->image_url)
-                <div class="grid grid-cols-4 gap-3">
-                    @foreach (range(1, 4) as $i)
-                        <button type="button"
-                                class="overflow-hidden rounded-xl border-2 bg-white transition {{ $i === 1 ? 'border-brand-500' : 'border-ink-100 hover:border-brand-300' }}">
-                            <img src="{{ $product->image_url }}" alt="Pratinjau {{ $i }}" class="aspect-square w-full object-cover">
-                        </button>
-                    @endforeach
-                </div>
-            @endif
+            {{-- Bar aksi galeri --}}
+            <div class="flex items-center gap-2">
+                <button type="button"
+                        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700">
+                    <svg class="h-4 w-4"><use href="#i-search"/></svg>
+                    Lihat Gambar
+                </button>
+            </div>
         </div>
 
         {{-- Info --}}
         <div class="lg:py-1">
             <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                <span class="inline-flex items-center gap-1 rounded-md bg-purple-700 px-2 py-1 text-white">
+                    <svg class="h-3.5 w-3.5"><use href="#i-badge-check"/></svg>
+                    Official Store
+                </span>
                 <a href="{{ route('home', ['category' => $product->category->slug]) }}"
                    class="rounded-md bg-brand-50 px-2.5 py-1 text-brand-700 hover:bg-brand-100">{{ $product->category->name }}</a>
                 <span class="text-ink-400">SKU {{ $product->sku }}</span>
@@ -93,6 +104,23 @@
                 @endif
             </div>
 
+            {{-- Info Toko & Lokasi (Tokopedia Style) --}}
+            <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-ink-100 bg-ink-50/60 px-4 py-3 text-xs text-ink-600">
+                <span class="inline-flex items-center gap-1.5 font-semibold text-ink-800">
+                    <svg class="h-4 w-4 text-brand-600"><use href="#i-map-pin"/></svg>
+                    Dikirim dari Kota Yogyakarta
+                </span>
+                <span class="inline-flex items-center gap-1.5">
+                    <svg class="h-4 w-4 text-emerald-600"><use href="#i-truck"/></svg>
+                    Bebas ongkir min. Rp300.000
+                </span>
+                <span class="inline-flex items-center gap-1.5">
+                    <svg class="h-4 w-4 text-purple-600"><use href="#i-shield"/></svg>
+                    100% Original &amp; Garansi Resmi
+                </span>
+            </div>
+
+            {{-- Box Harga & Pembelian --}}
             <div class="mt-5 rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
                 <div class="flex flex-wrap items-end gap-3">
                     <span class="text-3xl font-extrabold tracking-tight text-ink-900">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
@@ -104,11 +132,18 @@
                     @endif
                 </div>
 
-                @if ($product->stock > 0)
-                    <p class="mt-4 text-sm text-ink-500">
-                        Belanja min. <b class="font-semibold text-ink-700">Rp300.000</b> untuk gratis ongkir.
-                    </p>
+                {{-- Info Cicilan & Pembayaran (Tokopedia Style) --}}
+                <div class="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-ink-100 bg-ink-50/70 p-3 text-xs text-ink-600">
+                    <span class="flex items-center gap-1 font-semibold text-ink-800">
+                        <svg class="h-4 w-4 text-brand-600"><use href="#i-credit-card"/></svg>
+                        Cicilan mulai Rp{{ number_format(ceil($product->price / 12), 0, ',', '.') }}/bln
+                    </span>
+                    <span class="text-ink-300">&bull;</span>
+                    <span>Tersedia QRIS, GoPay, BCA, COD</span>
+                </div>
 
+                @if ($product->stock > 0)
+                    {{-- Form Pembelian Desktop --}}
                     @auth
                         <form method="POST" action="{{ route('cart.store') }}" class="mt-4 space-y-3">
                             @csrf
@@ -129,17 +164,17 @@
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><use href="#i-plus"/></svg>
                                     </button>
                                 </div>
-                                <span class="text-sm text-ink-500">Sisa {{ $product->stock }}</span>
+                                <span class="text-sm text-ink-500">Stok total: <b class="font-bold text-ink-800">{{ $product->stock }}</b></span>
                             </div>
 
                             <div class="flex flex-col gap-2.5 sm:flex-row">
                                 <button type="submit"
-                                        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-brand-600 bg-white px-5 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50">
+                                        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-brand-600 bg-white px-5 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50 active:scale-[0.98]">
                                     <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-cart"/></svg>
                                     + Keranjang
                                 </button>
                                 <button type="submit" name="buy_now" value="1"
-                                        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700">
+                                        class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-700 active:scale-[0.98]">
                                     <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-bolt"/></svg>
                                     Beli Sekarang
                                 </button>
@@ -177,13 +212,53 @@
                     </div>
                 @endif
 
-                <div class="mt-5 grid gap-3 border-t border-ink-100 pt-4 sm:grid-cols-3">
-                    @foreach ([['i-truck', 'Gratis ongkir'], ['i-shield', 'Garansi resmi'], ['i-refresh', 'Retur 7 hari']] as [$icon, $label])
-                        <div class="flex items-center gap-2 text-xs font-medium text-ink-600">
-                            <svg class="h-4 w-4 shrink-0 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{{ $icon }}"/></svg>
-                            {{ $label }}
+                {{-- Estimasi Pengiriman & Opsi Kurir (Tokopedia Style) --}}
+                <div class="mt-5 border-t border-ink-100 pt-4">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-ink-900">Pengiriman &amp; Ongkir</h4>
+                    <div class="mt-2.5 space-y-2 text-xs text-ink-600">
+                        <div class="flex items-start gap-2.5">
+                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"><use href="#i-truck"/></svg>
+                            <div>
+                                <span class="font-bold text-emerald-700">Bebas Ongkir</span> (min. belanja Rp300rb)
+                                <p class="text-[11px] text-ink-400">Estimasi tiba 2 - 4 hari kerja</p>
+                            </div>
                         </div>
-                    @endforeach
+                        <div class="flex items-start gap-2.5">
+                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-brand-600"><use href="#i-package"/></svg>
+                            <div>
+                                <span class="font-semibold text-ink-800">Kurir Tersedia:</span>
+                                <span class="text-ink-500">JNE, SiCepat, J&amp;T Express, GoSend Instant</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Kartu Toko (Official Store Card Tokopedia Style) --}}
+                <div class="mt-5 rounded-xl border border-ink-100 bg-ink-50/50 p-3.5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-800 text-sm font-black text-white shadow-xs">
+                                VP
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <h4 class="text-xs font-bold text-ink-900 sm:text-sm">VinzyPlay Official</h4>
+                                    <svg class="h-3.5 w-3.5 text-purple-700"><use href="#i-badge-check"/></svg>
+                                </div>
+                                <p class="text-[11px] text-emerald-600 font-semibold">&bull; Online 24 Jam &bull; Yogyakarta</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <a href="{{ route('home') }}"
+                               class="rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-ink-700 transition hover:border-brand-300 hover:text-brand-700 shadow-xs">
+                                Toko
+                            </a>
+                            <button type="button" onclick="document.querySelector('[data-chatbot-toggle]')?.click()"
+                                    class="rounded-lg bg-brand-50 px-2.5 py-1.5 text-[11px] font-bold text-brand-700 transition hover:bg-brand-100 shadow-xs">
+                                Chat
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -246,38 +321,66 @@
 
         <div class="space-y-4">
             @auth
-                @php $editing = $userReview !== null; @endphp
-                <form method="POST" action="{{ route('reviews.store', $product) }}"
-                      class="rounded-2xl border border-ink-100 bg-white p-6 shadow-card">
-                    @csrf
-                    <h3 class="text-base font-bold text-ink-900">{{ $editing ? 'Ubah ulasan Anda' : 'Tulis ulasan' }}</h3>
-
-                    <div class="mt-4 space-y-4">
-                        <div>
-                            <label for="rating" class="block text-sm font-semibold text-ink-700">Rating</label>
-                            <select id="rating" name="rating"
-                                    class="mt-1.5 w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
-                                @for ($i = 5; $i >= 1; $i--)
-                                    <option value="{{ $i }}" @selected((int) old('rating', $userReview?->rating) === $i)>{{ $i }} bintang</option>
-                                @endfor
-                            </select>
+                @if ($hasPurchased)
+                    @php $editing = $userReview !== null; @endphp
+                    <form method="POST" action="{{ route('reviews.store', $product) }}"
+                          class="rounded-2xl border border-ink-100 bg-white p-6 shadow-card">
+                        @csrf
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-base font-bold text-ink-900">{{ $editing ? 'Ubah ulasan Anda' : 'Tulis Ulasan Pembeli' }}</h3>
+                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+                                <svg class="h-3 w-3"><use href="#i-check-circle"/></svg>
+                                Pembeli Terverifikasi
+                            </span>
                         </div>
 
-                        <div>
-                            <label for="comment" class="block text-sm font-semibold text-ink-700">Komentar <span class="font-normal text-ink-400">(opsional)</span></label>
-                            <textarea id="comment" name="comment" rows="3" maxlength="500"
-                                      class="mt-1.5 w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">{{ old('comment', $userReview?->comment) }}</textarea>
-                        </div>
+                        @error('review')
+                            <div class="mt-3 rounded-xl border border-danger-500/20 bg-danger-500/10 px-3.5 py-2 text-xs font-semibold text-danger-600">
+                                {{ $message }}
+                            </div>
+                        @enderror
 
-                        <button type="submit"
-                                class="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700">
-                            {{ $editing ? 'Perbarui ulasan' : 'Kirim ulasan' }}
-                        </button>
+                        <div class="mt-4 space-y-4">
+                            <div>
+                                <label for="rating" class="block text-sm font-semibold text-ink-700">Rating kepuasan</label>
+                                <select id="rating" name="rating"
+                                        class="mt-1.5 w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                                    @for ($i = 5; $i >= 1; $i--)
+                                        <option value="{{ $i }}" @selected((int) old('rating', $userReview?->rating) === $i)>{{ $i }} bintang {{ $i === 5 ? '(Sangat Puas)' : ($i === 4 ? '(Puas)' : '') }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="comment" class="block text-sm font-semibold text-ink-700">Ulasan &amp; pengalaman belanja <span class="font-normal text-ink-400">(opsional)</span></label>
+                                <textarea id="comment" name="comment" rows="3" maxlength="500" placeholder="Ceritakan kualitas produk, fungsi, dan packaging..."
+                                          class="mt-1.5 w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">{{ old('comment', $userReview?->comment) }}</textarea>
+                            </div>
+
+                            <button type="submit"
+                                    class="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700 shadow-sm">
+                                {{ $editing ? 'Perbarui ulasan' : 'Kirim ulasan' }}
+                            </button>
+                        </div>
+                    </form>
+                @else
+                    <div class="rounded-2xl border border-dashed border-ink-200 bg-white p-5 text-sm shadow-card">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink-50 text-ink-500">
+                                <svg class="h-5 w-5"><use href="#i-info"/></svg>
+                            </span>
+                            <div>
+                                <strong class="font-bold text-ink-900">Ingin menulis ulasan?</strong>
+                                <p class="mt-0.5 text-xs text-ink-500">
+                                    Hanya pembeli yang telah membeli dan menyelesaikan pesanan produk ini yang dapat memberikan ulasan &amp; rating.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                </form>
+                @endif
             @else
                 <p class="rounded-2xl border border-ink-100 bg-white p-5 text-sm text-ink-500 shadow-card">
-                    <a href="{{ route('login') }}" class="font-semibold text-brand-600 hover:text-brand-700">Masuk</a> untuk menulis ulasan.
+                    <a href="{{ route('login') }}" class="font-semibold text-brand-600 hover:text-brand-700">Masuk</a> untuk menulis ulasan produk.
                 </p>
             @endauth
 
@@ -288,8 +391,13 @@
                             {{ $review->user->initials() }}
                         </span>
                         <div class="min-w-0 flex-1">
-                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                                 <strong class="text-sm font-bold text-ink-900">{{ $review->user->username }}</strong>
+                                <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700">
+                                    <svg class="h-3 w-3"><use href="#i-check-circle"/></svg>
+                                    Pembeli Terverifikasi
+                                </span>
+                                <span class="text-ink-300">&bull;</span>
                                 @include('components.stars', ['rating' => $review->rating])
                             </div>
                             <time class="mt-0.5 block text-xs text-ink-400">{{ $review->created_at->translatedFormat('d M Y') }}</time>
@@ -336,4 +444,46 @@
         </div>
     </section>
 @endif
+
+{{-- Sticky Buy Bar Mobile (Shopee & Tokopedia Style) --}}
+<div class="fixed inset-x-0 bottom-0 z-30 border-t border-ink-200 bg-white/95 p-3 shadow-lift backdrop-blur md:hidden">
+    <div class="flex items-center gap-2">
+        <button type="button" onclick="document.querySelector('[data-chatbot-toggle]')?.click()"
+                class="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-600 transition hover:bg-ink-50 shadow-xs"
+                aria-label="Chat penjual">
+            <svg class="h-4.5 w-4.5 text-brand-600"><use href="#i-headset"/></svg>
+            <span class="text-[9px] font-bold">Chat</span>
+        </button>
+
+        @if ($product->stock > 0)
+            @auth
+                <form method="POST" action="{{ route('cart.store') }}" class="flex flex-1 gap-2">
+                    @csrf
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit"
+                            class="flex flex-1 items-center justify-center gap-1 rounded-xl border-2 border-brand-600 bg-white py-2.5 text-xs font-bold text-brand-700 shadow-xs">
+                        <svg class="h-4 w-4"><use href="#i-cart"/></svg>
+                        + Keranjang
+                    </button>
+                    <button type="submit" name="buy_now" value="1"
+                            class="flex flex-1 items-center justify-center gap-1 rounded-xl bg-brand-600 py-2.5 text-xs font-bold text-white shadow-xs">
+                        <svg class="h-4 w-4"><use href="#i-bolt"/></svg>
+                        Beli Langsung
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('login') }}"
+                   class="flex flex-1 items-center justify-center rounded-xl bg-brand-600 py-3 text-xs font-bold text-white shadow-xs">
+                    Masuk untuk Beli
+                </a>
+            @endauth
+        @else
+            <button type="button" disabled
+                    class="flex flex-1 cursor-not-allowed items-center justify-center rounded-xl bg-ink-100 py-3 text-xs font-bold text-ink-400">
+                Stok Habis
+            </button>
+        @endif
+    </div>
+</div>
 @endsection

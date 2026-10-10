@@ -65,14 +65,30 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label for="password" class="block text-sm font-semibold text-ink-700">Password</label>
-                        <input id="password" name="password" type="password" autocomplete="new-password"
-                               class="{{ $field }} mt-1.5 {{ $errors->has('password') ? 'border-danger-400 focus:border-danger-500' : 'border-ink-200 focus:border-brand-500' }}">
+                        <div class="relative mt-1.5">
+                            <input id="password" name="password" type="password" autocomplete="new-password" data-password-input
+                                   class="{{ $field }} pr-11 {{ $errors->has('password') ? 'border-danger-400 focus:border-danger-500' : 'border-ink-200 focus:border-brand-500' }}">
+                            <button type="button" data-password-toggle
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition hover:bg-ink-100 hover:text-ink-700"
+                                    aria-label="Tampilkan password" tabindex="-1">
+                                <svg class="h-4.5 w-4.5" data-eye-open><use href="#i-eye"/></svg>
+                                <svg class="hidden h-4.5 w-4.5" data-eye-closed><use href="#i-eye-off"/></svg>
+                            </button>
+                        </div>
                         @error('password')<p class="mt-1.5 text-xs font-semibold text-danger-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label for="password_confirmation" class="block text-sm font-semibold text-ink-700">Ulangi password</label>
-                        <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password"
-                               class="{{ $field }} mt-1.5 border-ink-200 focus:border-brand-500">
+                        <div class="relative mt-1.5">
+                            <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" data-password-input
+                                   class="{{ $field }} pr-11 border-ink-200 focus:border-brand-500">
+                            <button type="button" data-password-toggle
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition hover:bg-ink-100 hover:text-ink-700"
+                                    aria-label="Tampilkan password" tabindex="-1">
+                                <svg class="h-4.5 w-4.5" data-eye-open><use href="#i-eye"/></svg>
+                                <svg class="hidden h-4.5 w-4.5" data-eye-closed><use href="#i-eye-off"/></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 

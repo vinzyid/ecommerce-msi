@@ -97,12 +97,13 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
-            // Koneksi persisten + prepared statement untuk mengurangi overhead
-            // ke database cloud (Neon). ATTR_PERSISTENT menahan koneksi agar
-            // tidak buka-tutup tiap request; ATTR_EMULATE_PREPARES=false pakai
-            // prepared statement native (aman untuk PgBouncer transaction mode).
+            // Pada Neon PgBouncer (host *-pooler), koneksi persisten (ATTR_PERSISTENT=true)
+            // menahan koneksi kotor antar-request dan merusak transaksi (SQLSTATE 25P02).
+            // ATTR_PERSISTENT WAJIB false.
+            // ATTR_EMULATE_PREPARES WAJIB false agar boolean dikirim sebagai native boolean
+            // (bukan integer 1, yang memicu SQLSTATE 42883: boolean = integer).
             'options' => extension_loaded('pdo_pgsql') ? [
-                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false),
+                PDO::ATTR_PERSISTENT => false,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ] : [],
         ],

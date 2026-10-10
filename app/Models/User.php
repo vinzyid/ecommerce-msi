@@ -76,4 +76,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(Wishlist::class);
     }
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(UserAddress::class)->latest('is_default')->latest('id');
+    }
+
+    /**
+     * Alamat utama pengguna untuk auto-isi checkout.
+     */
+    public function defaultAddress(): ?UserAddress
+    {
+        return $this->addresses()
+            ->orderByDesc('is_default')
+            ->orderByDesc('id')
+            ->first();
+    }
 }

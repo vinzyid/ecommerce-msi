@@ -37,6 +37,11 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/account', [\App\Http\Controllers\AccountController::class, 'show'])->name('account');
+    Route::put('/account/profile', [\App\Http\Controllers\AccountController::class, 'updateProfile'])->name('account.profile');
+    Route::put('/account/password', [\App\Http\Controllers\AccountController::class, 'updatePassword'])->name('account.password');
+    Route::post('/account/addresses', [\App\Http\Controllers\AccountController::class, 'storeAddress'])->name('account.addresses.store');
+    Route::patch('/account/addresses/{address}/default', [\App\Http\Controllers\AccountController::class, 'setDefaultAddress'])->name('account.addresses.default');
+    Route::delete('/account/addresses/{address}', [\App\Http\Controllers\AccountController::class, 'deleteAddress'])->name('account.addresses.destroy');
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -61,6 +66,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{order}/simulate-payment', [OrderController::class, 'simulatePayment'])->name('orders.simulatePayment');
+    Route::post('/orders/{order}/simulate-ship', [OrderController::class, 'simulateShip'])->name('orders.simulateShip');
+    Route::post('/orders/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {

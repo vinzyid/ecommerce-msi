@@ -23,10 +23,23 @@ class CheckoutController extends Controller
 
     public function create(Request $request): View|RedirectResponse
     {
-        $cartItems = $request->user()->cartItems()->with('product')->get();
+        $selectedIds = null;
+        if ($request->filled('items')) {
+            $selectedIds = array_filter(array_map('intval', explode(',', (string) $request->input('items'))));
+            $request->session()->put('checkout_item_ids', $selectedIds);
+        } elseif ($request->session()->has('checkout_item_ids')) {
+            $selectedIds = $request->session()->get('checkout_item_ids');
+        }
+
+        $query = $request->user()->cartItems()->with('product');
+        if (! empty($selectedIds)) {
+            $query->whereIn('id', $selectedIds);
+        }
+
+        $cartItems = $query->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->withErrors(['cart' => 'Cart masih kosong.']);
+            return redirect()->route('cart.index')->withErrors(['cart' => 'Pilih minimal satu barang untuk checkout.']);
         }
 
         $shippingMethod = $request->session()->get('shipping_method', 'regular');
@@ -34,10 +47,17 @@ class CheckoutController extends Controller
             $request->user(),
             $request->session()->get('voucher_code'),
             $shippingMethod,
+            $cartItems->pluck('id')->all(),
         );
+
+        $savedAddresses = $request->user()->addresses()->get();
+        $defaultAddress = $request->user()->defaultAddress();
 
         return view('checkout.create', [
             'cartItems' => $cartItems,
+            'selectedItemIds' => $cartItems->pluck('id')->implode(','),
+            'savedAddresses' => $savedAddresses,
+            'defaultAddress' => $defaultAddress,
             'subtotal' => $summary['subtotal'],
             'discount' => $summary['discount'],
             'shippingCost' => $summary['shipping'],
@@ -50,6 +70,7 @@ class CheckoutController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'items' => 'nullable|string',
             'customer_name' => 'required|string|max:100',
             'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+()\-\s]+$/'],
             'address' => 'required|string|min:10|max:1000',
@@ -76,18 +97,31 @@ class CheckoutController extends Controller
         ]);
 
         $user = $request->user();
-        $cartItems = $user->cartItems()->get();
+
+        // Ambil hanya item yang dipilih untuk dicekout
+        $selectedIds = null;
+        if (! empty($validated['items'])) {
+            $selectedIds = array_filter(array_map('intval', explode(',', $validated['items'])));
+        } elseif ($request->session()->has('checkout_item_ids')) {
+            $selectedIds = $request->session()->get('checkout_item_ids');
+        }
+
+        $cartQuery = $user->cartItems();
+        if (! empty($selectedIds)) {
+            $cartQuery->whereIn('id', $selectedIds);
+        }
+
+        $cartItems = $cartQuery->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->withErrors(['cart' => 'Cart masih kosong.']);
+            return redirect()->route('cart.index')->withErrors(['cart' => 'Pilih minimal satu barang untuk checkout.']);
         }
 
         $voucherCode = $request->session()->get('voucher_code');
 
-        $order = DB::transaction(function () use ($cartItems, $user, $validated, $voucherCode) {
+        $order = DB::transaction(function () use ($cartItems, $user, $validated, $voucherCode, $request) {
             $products = Product::query()
                 ->whereIn('id', $cartItems->pluck('product_id'))
-                ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
 
@@ -106,7 +140,7 @@ class CheckoutController extends Controller
             }
 
             $voucher = $voucherCode
-                ? Voucher::query()->where('code', $voucherCode)->lockForUpdate()->first()
+                ? Voucher::query()->where('code', $voucherCode)->first()
                 : null;
 
             $discount = 0;
@@ -162,14 +196,57 @@ class CheckoutController extends Controller
                 $voucher->increment('used_count');
             }
 
-            $user->cartItems()->delete();
+            // HANYA hapus barang yang dicekout dari keranjang (barang lain tetap ada!)
+            $user->cartItems()->whereIn('id', $cartItems->pluck('id'))->delete();
+            $request->session()->forget(['checkout_item_ids', 'voucher_code']);
 
             return $order;
         });
 
+        // Simpan alamat ke buku alamat agar tidak perlu mengisi ulang di checkout berikutnya.
+        $this->rememberAddress($user, $validated);
+
         $request->session()->forget(['voucher_code', 'shipping_method']);
 
         return redirect()->route('orders.show', $order)->with('success', 'Pesanan berhasil dibuat.');
+    }
+
+    /**
+     * Simpan/perbarui alamat pengiriman ke buku alamat pengguna secara otomatis.
+     */
+    private function rememberAddress(\App\Models\User $user, array $data): void
+    {
+        $exists = $user->addresses()
+            ->where('address', $data['address'])
+            ->where('postal_code', $data['postal_code'])
+            ->exists();
+
+        if ($exists) {
+            // Perbarui data kontak pada alamat yang sudah tersimpan.
+            $user->addresses()
+                ->where('address', $data['address'])
+                ->where('postal_code', $data['postal_code'])
+                ->update([
+                    'recipient_name' => $data['customer_name'],
+                    'phone' => $data['phone'],
+                ]);
+
+            return;
+        }
+
+        $isFirst = $user->addresses()->count() === 0;
+
+        $user->addresses()->create([
+            'label' => $isFirst ? 'Rumah' : 'Alamat '.($user->addresses()->count() + 1),
+            'recipient_name' => $data['customer_name'],
+            'phone' => $data['phone'],
+            'address' => $data['address'],
+            'province' => $data['province'],
+            'city' => $data['city'],
+            'district' => $data['district'],
+            'postal_code' => $data['postal_code'],
+            'is_default' => $isFirst,
+        ]);
     }
 
     private function orderNumber(): string

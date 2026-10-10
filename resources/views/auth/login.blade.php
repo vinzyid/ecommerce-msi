@@ -55,8 +55,16 @@
 
                 <div>
                     <label for="password" class="block text-sm font-semibold text-ink-700">Password</label>
-                    <input id="password" name="password" type="password" autocomplete="current-password"
-                           class="{{ $field }} mt-1.5 {{ $errors->has('password') ? 'border-danger-400 focus:border-danger-500' : 'border-ink-200 focus:border-brand-500' }}">
+                    <div class="relative mt-1.5">
+                        <input id="password" name="password" type="password" autocomplete="current-password" data-password-input
+                               class="{{ $field }} pr-11 {{ $errors->has('password') ? 'border-danger-400 focus:border-danger-500' : 'border-ink-200 focus:border-brand-500' }}">
+                        <button type="button" data-password-toggle
+                                class="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition hover:bg-ink-100 hover:text-ink-700"
+                                aria-label="Tampilkan password" tabindex="-1">
+                            <svg class="h-4.5 w-4.5" data-eye-open><use href="#i-eye"/></svg>
+                            <svg class="hidden h-4.5 w-4.5" data-eye-closed><use href="#i-eye-off"/></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit"

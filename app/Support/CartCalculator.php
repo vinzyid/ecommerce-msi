@@ -15,13 +15,18 @@ class CartCalculator
     public const EXPRESS_SHIPPING_COST = 25000;
 
     /**
+     * @param  array<int>|null  $itemIds
      * @return array{subtotal:int, discount:int, shipping:int, total:int, voucher:?Voucher}
      */
-    public function summarize(User $user, ?string $voucherCode = null, string $shippingMethod = 'regular'): array
+    public function summarize(User $user, ?string $voucherCode = null, string $shippingMethod = 'regular', ?array $itemIds = null): array
     {
-        $subtotal = (int) $user->cartItems()
-            ->with('product')
-            ->get()
+        $query = $user->cartItems()->with('product');
+
+        if (! empty($itemIds)) {
+            $query->whereIn('id', $itemIds);
+        }
+
+        $subtotal = (int) $query->get()
             ->sum(fn (CartItem $item) => (int) $item->product->price * $item->quantity);
 
         $voucher = $voucherCode

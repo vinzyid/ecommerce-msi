@@ -8,7 +8,8 @@
     $isWishlisted = in_array($product->id, $wishlisted, true);
     $sold = max(3, ($product->id * 17) % 240);
 @endphp
-<article class="group relative flex flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:border-brand-200 hover:shadow-lift">
+<article class="group relative flex flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card transition duration-200 hover:-translate-y-1 hover:border-brand-300 hover:shadow-lift">
+    {{-- Gambar produk --}}
     <div class="relative aspect-square overflow-hidden bg-ink-50">
         <a href="{{ route('products.show', $product) }}" class="block h-full" tabindex="-1" aria-hidden="true">
             @if ($product->image_url)
@@ -21,19 +22,20 @@
             @endif
         </a>
 
-        <div class="pointer-events-none absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5">
+        {{-- Badges pojok kiri atas --}}
+        <div class="pointer-events-none absolute left-2.5 top-2.5 flex flex-col items-start gap-1">
+            <span class="inline-flex items-center gap-1 rounded-md bg-purple-700/90 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm backdrop-blur">
+                <svg class="h-3 w-3"><use href="#i-badge-check"/></svg>
+                Official
+            </span>
             @if ($product->hasDiscount())
-                <span class="rounded-md bg-danger-500 px-2 py-1 text-xs font-bold text-white shadow-sm">
+                <span class="rounded-md bg-danger-500 px-1.5 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
                     -{{ $product->discountPercent() }}%
                 </span>
             @endif
             @if ($product->badge)
-                <span class="rounded-md bg-ink-900/85 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur">
+                <span class="rounded-md bg-ink-900/85 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
                     {{ $product->badge }}
-                </span>
-            @elseif ($product->is_featured)
-                <span class="rounded-md bg-accent-500 px-2 py-1 text-[11px] font-semibold text-ink-900">
-                    Rekomendasi
                 </span>
             @endif
         </div>
@@ -41,13 +43,13 @@
         @auth
             <form method="POST"
                   action="{{ $isWishlisted ? route('wishlist.destroy', $product) : route('wishlist.store', $product) }}"
-                  class="absolute right-2.5 top-2.5">
+                  class="absolute right-2.5 top-2.5 z-10">
                 @csrf
                 @if ($isWishlisted)@method('DELETE')@endif
                 <button type="submit"
-                        class="flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/90 shadow-sm backdrop-blur transition hover:scale-105 hover:bg-white"
+                        class="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/90 shadow-sm backdrop-blur transition hover:scale-110 hover:bg-white"
                         aria-label="{{ $isWishlisted ? 'Hapus dari wishlist' : 'Simpan ke wishlist' }}">
-                    <svg class="h-4.5 w-4.5 {{ $isWishlisted ? 'text-danger-500' : 'text-ink-400' }}" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg class="h-4 w-4 {{ $isWishlisted ? 'text-danger-500' : 'text-ink-400' }}" viewBox="0 0 24 24" aria-hidden="true">
                         <use href="{{ $isWishlisted ? '#i-heart-filled' : '#i-heart' }}"/>
                     </svg>
                 </button>
@@ -61,56 +63,77 @@
         @endif
     </div>
 
-    <div class="flex flex-1 flex-col gap-2 p-3.5">
-        <span class="text-[11px] font-semibold uppercase tracking-wide text-brand-600">{{ $product->category->name }}</span>
+    {{-- Detail & Harga --}}
+    <div class="flex flex-1 flex-col gap-1.5 p-3 sm:p-3.5">
+        {{-- Kategori --}}
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-brand-600 truncate">{{ $product->category->name }}</span>
 
-        <h3 class="line-clamp-2 min-h-[2.6rem] text-sm font-semibold leading-snug text-ink-900">
-            <a href="{{ route('products.show', $product) }}" class="hover:text-brand-700">{{ $product->name }}</a>
+        {{-- Judul produk --}}
+        <h3 class="line-clamp-2 min-h-[2.5rem] text-xs font-semibold leading-snug text-ink-900 sm:text-sm">
+            <a href="{{ route('products.show', $product) }}" class="transition hover:text-brand-600">{{ $product->name }}</a>
         </h3>
 
-        <div class="flex items-center gap-1.5 text-xs text-ink-500">
+        {{-- Harga & Diskon --}}
+        <div class="pt-0.5">
+            <div class="text-sm font-extrabold text-ink-900 sm:text-base">
+                Rp{{ number_format($product->price, 0, ',', '.') }}
+            </div>
+            @if ($product->hasDiscount())
+                <div class="flex items-center gap-1.5 text-[11px] text-ink-400">
+                    <span class="line-through">Rp{{ number_format($product->compare_at_price, 0, ',', '.') }}</span>
+                    <span class="rounded bg-danger-50 px-1 font-bold text-danger-600 text-[10px]">-{{ $product->discountPercent() }}%</span>
+                </div>
+            @endif
+        </div>
+
+        {{-- Badge Bebas Ongkir (Tokopedia Style) & Lokasi --}}
+        <div class="flex flex-wrap items-center gap-1.5 pt-0.5 text-[10px]">
+            <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 font-bold text-emerald-700">
+                <svg class="h-3 w-3"><use href="#i-truck"/></svg>
+                Bebas Ongkir
+            </span>
+            <span class="inline-flex items-center gap-0.5 text-ink-400">
+                <svg class="h-3 w-3 text-ink-400"><use href="#i-map-pin"/></svg>
+                Kota Yogyakarta
+            </span>
+        </div>
+
+        {{-- Rating & Terjual (Shopee / Tokopedia Style) --}}
+        <div class="flex items-center gap-1.5 text-[11px] text-ink-500 pt-0.5">
             @if ($reviewCount > 0)
-                @include('components.stars', ['rating' => $rating])
-                <span>{{ number_format($rating, 1, ',', '.') }}</span>
+                <span class="inline-flex items-center gap-0.5 text-amber-500">
+                    <svg class="h-3.5 w-3.5 fill-current"><use href="#i-star-filled"/></svg>
+                    <b class="text-ink-800">{{ number_format($rating, 1, ',', '.') }}</b>
+                </span>
                 <span class="text-ink-300">&bull;</span>
                 <span>{{ $sold }} terjual</span>
             @else
-                <span>Belum ada ulasan</span>
-            @endif
-        </div>
-
-        <div class="mt-auto flex items-end justify-between gap-2 pt-1">
-            <div class="min-w-0">
-                <div class="text-base font-extrabold leading-tight text-ink-900">
-                    Rp{{ number_format($product->price, 0, ',', '.') }}
-                </div>
-                @if ($product->hasDiscount())
-                    <div class="text-xs text-ink-400 line-through">
-                        Rp{{ number_format($product->compare_at_price, 0, ',', '.') }}
-                    </div>
-                @endif
-            </div>
-
-            @if ($product->stock > 0)
-                <span class="shrink-0 rounded-md bg-success-500/10 px-2 py-1 text-[11px] font-semibold text-success-600">
-                    {{ $product->stock }} stok
+                <span class="inline-flex items-center gap-0.5 text-ink-400">
+                    <svg class="h-3.5 w-3.5 text-ink-300"><use href="#i-star"/></svg>
+                    <span>Terjual {{ $sold }}</span>
                 </span>
-            @else
-                <span class="shrink-0 rounded-md bg-ink-100 px-2 py-1 text-[11px] font-semibold text-ink-500">Habis</span>
             @endif
         </div>
 
-        @if ($product->stock > 0)
-            <form method="POST" action="{{ route('cart.store') }}" class="pt-1">
-                @csrf
-                <input type="hidden" name="product_id" value="{{ $product->id }}">
-                <input type="hidden" name="quantity" value="1">
-                <button type="submit"
-                        class="flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 active:scale-[0.98]">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-cart"/></svg>
-                    + Keranjang
+        {{-- Tombol Beli / Keranjang --}}
+        <div class="mt-auto pt-2">
+            @if ($product->stock > 0)
+                <form method="POST" action="{{ route('cart.store') }}">
+                    @csrf
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit"
+                            class="flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-brand-700 active:scale-[0.98]">
+                        <svg class="h-3.5 w-3.5"><use href="#i-cart"/></svg>
+                        + Keranjang
+                    </button>
+                </form>
+            @else
+                <button type="button" disabled
+                        class="flex w-full cursor-not-allowed items-center justify-center rounded-xl bg-ink-100 px-3 py-1.5 text-xs font-semibold text-ink-400">
+                    Stok Habis
                 </button>
-            </form>
-        @endif
+            @endif
+        </div>
     </div>
 </article>
