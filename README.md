@@ -1,210 +1,335 @@
-# Praktik MSI: Redesign Website E-Commerce
+<div align="center">
 
-Redesign antarmuka dan penambahan fitur pada website e-commerce berbasis Laravel untuk tugas Praktik MSI. Aplikasi mencakup katalog produk, autentikasi pelanggan, wishlist, cart, checkout, ulasan, riwayat pesanan, dan panel admin.
+# 🎮 VinzyPlay — E-Commerce Marketplace
 
-## Nama Toko
+**Platform belanja daring untuk Gaming Gears, Diecast Koleksi, Komponen PC & Hobi**
 
-Nama toko tidak ditulis di dalam kode. Nama diambil dari `APP_NAME` pada `.env` dan dipakai otomatis pada judul halaman, logo, serta footer.
+Dibangun dengan Laravel 12 · Tailwind CSS v4 · PostgreSQL (Neon) · AI Customer Assistant
 
-```dotenv
-APP_NAME="Nama Toko Anda"
+![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7.x-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+
+</div>
+
+---
+
+## 📖 Daftar Isi
+
+- [Tentang Proyek](#-tentang-proyek)
+- [Fitur Unggulan](#-fitur-unggulan)
+- [Tumpukan Teknologi](#-tumpukan-teknologi)
+- [Arsitektur & Struktur Data](#-arsitektur--struktur-data)
+- [Instalasi](#-instalasi)
+- [Menjalankan Aplikasi](#-menjalankan-aplikasi)
+- [Akun Development](#-akun-development)
+- [Pengujian](#-pengujian)
+- [Struktur Proyek](#-struktur-proyek)
+- [Dokumentasi Tambahan](#-dokumentasi-tambahan)
+
+---
+
+## 🎯 Tentang Proyek
+
+**VinzyPlay** adalah aplikasi e-commerce bertema marketplace (mirip Tokopedia & Shopee) yang dikhususkan untuk
+perlengkapan **gaming**, **diecast koleksi**, **komponen PC**, dan **hobi**. Proyek ini merupakan hasil redesain
+total antarmuka sekaligus penambahan puluhan fitur modern — mulai dari pelacakan pengiriman, buku alamat otomatis,
+hingga asisten belanja berbasis AI dengan konsep *Green Computing*.
+
+> **Nama toko bersifat konfigurabel.** Nama diambil dari `APP_NAME` di `.env` dan otomatis dipakai pada judul
+> halaman, logo, footer, serta sapaan chatbot.
+>
+> ```dotenv
+> APP_NAME="VinzyPlay"
+> ```
+
+**Developer:** Rafi Pandya P
+
+---
+
+## ✨ Fitur Unggulan
+
+### 🛍️ Storefront Modern (Gaya Tokopedia & Shopee)
+- **Top Utility Bar** — unduh aplikasi, mitra seller, info gratis ongkir, CS 24/7
+- **Trending Search Bar** — pencarian *case-insensitive* (`ILIKE`), multi-kata, lintas kategori & SKU,
+  dilengkapi tag pencarian populer yang bisa diklik
+- **Hero 3-Slot Banner** — slider carousel promosi (auto-slide + navigasi) dengan kartu promo samping
+- **Klaim Voucher Toko** — salin kode kupon dengan satu klik + notifikasi pop-up
+- **Flash Sale & Kejar Diskon** — countdown timer real-time + progress bar penjualan
+- **Official Brands Pavilion** — PlayStation, ASUS ROG, Logitech G, HyperX, Secretlab, Mini GT, MSI, Hot Wheels
+- **Product Card Rich** — badge Official Store, Bebas Ongkir, lokasi, rating, jumlah terjual
+- **Bottom Navigation Mobile** — navigasi cepat ala aplikasi mobile di layar kecil
+
+### 🏷️ Detail Produk
+- Galeri produk, status diskon, dan jaminan 100% Original
+- **Store Card** — profil toko resmi + tombol *Chat Penjual* yang langsung membuka chatbot
+- Estimasi pengiriman, pilihan kurir, simulasi cicilan, dan metode pembayaran
+- **Sticky Mobile Buy Bar** — tombol beli tetap terlihat saat menggulir
+- **Ulasan Pembeli Terverifikasi** — hanya pengguna yang benar-benar membeli produk yang dapat mengulas
+
+### 🛒 Keranjang Belanja Pintar
+- **Pilih barang mau dibeli** — centang item individual atau "Pilih Semua" (*partial checkout*)
+- **Kalkulasi real-time** — subtotal, jumlah barang, dan total dihitung otomatis tanpa reload
+- **Progress Bar Bebas Ongkir** — menampilkan sisa belanjaan hingga gratis ongkir
+- Stepper kuantitas interaktif `[-]` `[+]`
+- **Beli Sekarang** — langsung checkout untuk produk tunggal
+
+### 💳 Checkout & Pembayaran
+- Alur 3 tahap: **Alamat → Pengiriman → Pembayaran**
+- Pilihan kurir: **Reguler** (bebas ongkir min. Rp300.000) & **Kilat** (Rp25.000)
+- Metode pembayaran: **Transfer Bank / Virtual Account** (BCA, Mandiri, BRI, BNI) & **COD**
+- **Buku Alamat Otomatis** — alamat tersimpan otomatis, checkout berikutnya langsung terisi
+- Checkout sebagian — hanya barang yang dipilih yang dihapus dari keranjang
+
+### 🚚 Pelacakan Pesanan
+- **Stepper status**: Menunggu Bayar → Diproses → Dikirim → Selesai
+- **Simulasi pembayaran sandbox** — tandai lunas tanpa uang asli untuk keperluan demonstrasi
+- **Penerbitan resi otomatis** + pilihan kurir
+- **Timeline pelacakan kurir** — log perjalanan paket bertahap (khas Shopee/Tokopedia)
+- Konfirmasi pesanan diterima yang membuka akses ulasan
+
+### 🤖 Chatbot Asisten AI
+- Terintegrasi API LLM kompatibel OpenAI (Grok/OpenAI/OpenRouter/DeepSeek)
+- **Memori percakapan** — mengirim 8 pesan terakhir agar konteks tidak hilang
+- **Guardrail anti-offtopic** — hanya menjawab seputar belanja toko
+- **Format ramah ponsel** — tanpa tabel markdown rusak, perbandingan produk terstruktur
+- **Green Computing** — cache pertanyaan mirip untuk menghemat token LLM, listrik (kWh), dan emisi karbon (CO₂e)
+
+### 👤 Kelola Akun
+- Dashboard profil: total pesanan, pesanan aktif, total belanja, wishlist
+- Tab interaktif: **Profil**, **Alamat Saya**, **Keamanan**, **Riwayat Pesanan**
+- Buku alamat (tambah, hapus, jadikan alamat utama)
+- Ganti password terenkripsi dengan tombol lihat password (ikon mata)
+
+### 🔔 Pengalaman Pengguna
+- **Notifikasi toast pop-up** dengan efek *glassmorphism*, progress bar, dan auto-dismiss
+- **Efek suara "centung"** (Web Audio API) saat aksi berhasil
+- Riwayat chatbot terisolasi per akun & otomatis dibersihkan saat logout
+
+### 🛠️ Panel Admin
+- Dashboard ringkasan & grafik (produk per kategori, pendapatan bulanan, status pesanan)
+- Pengelolaan kategori, produk, stok, harga, promo, label, dan foto
+- Pengelolaan pengguna, peran akun, dan voucher
+- Daftar & detail pesanan + perubahan status
+- **Dashboard Chatbot**: statistik cache, hit rate, dan metrik Green Computing
+
+---
+
+## 🧰 Tumpukan Teknologi
+
+| Kategori | Teknologi |
+|---|---|
+| **Backend** | PHP 8.4 · Laravel 12 |
+| **Frontend** | Blade Templating · Tailwind CSS v4 · Vanilla JavaScript |
+| **Build Tool** | Vite 7 + Laravel Vite Plugin |
+| **Database** | PostgreSQL 16 pada Neon Serverless Cloud |
+| **AI** | LLM kompatibel OpenAI (chat completions) |
+| **Testing** | PHPUnit |
+
+---
+
+## 🗄️ Arsitektur & Struktur Data
+
+Aplikasi menggunakan **13 tabel inti** dengan relasi foreign key yang terjaga:
+
+```
+users ──┬── user_addresses        (buku alamat, ON DELETE CASCADE)
+        ├── cart_items            (keranjang, CASCADE)
+        ├── orders                (pesanan, RESTRICT)
+        ├── reviews               (ulasan, CASCADE)
+        ├── wishlists             (favorit, CASCADE)
+        └── chatbot_messages      (cache AI, SET NULL)
+
+categories ── products ──┬── cart_items   (CASCADE)
+                         ├── order_items  (SET NULL — snapshot historis)
+                         ├── reviews      (CASCADE)
+                         └── wishlists    (CASCADE)
+
+orders ── order_items      (rincian, CASCADE)
+vouchers ── orders         (diskon, SET NULL)
 ```
 
-Untuk mengganti nama toko, cukup ubah `APP_NAME`. Tidak perlu menyentuh kode atau tampilan.
+📊 **Diagram ERD lengkap, alur transaksi, dan flow chatbot tersedia di → [`FLOW_DATABASE.md`](FLOW_DATABASE.md)**
 
-## Developer
+---
 
-**Rafi Pandya P**
+## ⚙️ Instalasi
 
-## Fitur
-
-### Pengunjung
-
-- Katalog produk dengan foto
-- Pencarian dari header atau katalog berdasarkan nama, SKU, dan deskripsi
-- Filter dan halaman kategori
-- Halaman promo berisi produk diskon dan kode voucher
-- Halaman tentang
-- Membaca ulasan pembeli
-
-### Pelanggan
-
-- Registrasi dan login dengan email atau username
-- Wishlist dengan ikon hati pada tiap produk
-- Cart tersimpan per akun, dengan opsi menghapus seluruh isi
-- Kode promo dengan validasi minimum belanja dan batas potongan
-- Checkout bertahap: alamat, pengiriman, pembayaran, konfirmasi
-- Ongkir reguler Rp15.000 gratis mulai Rp300.000, atau pengiriman kilat Rp25.000
-- Pembayaran COD atau transfer bank
-- Menulis dan mengubah ulasan produk
-- Riwayat serta detail pesanan
-
-### Admin
-
-- Ringkasan angka dan tiga grafik: produk per kategori, pendapatan bulanan, status pesanan
-- Pengelolaan kategori
-- Pengelolaan produk, harga, harga promo, foto, stok, dan atribut produk
-- Pengaturan produk aktif, rekomendasi, serta label produk
-- Pengelolaan pengguna dan peran akun
-- Pengelolaan voucher
-- Daftar dan detail pesanan pelanggan
-- Perubahan status pesanan
-
-## Teknologi
-
-- PHP 8.2
-- Laravel 12
-- MySQL atau MariaDB
-- Eloquent ORM
-- Blade
-- CSS
-- PHPUnit
-
-## Kebutuhan Sistem
-
-- PHP 8.2 atau lebih baru
+### Prasyarat
+- PHP **8.2+** (disarankan 8.4)
 - Composer 2
-- MySQL atau MariaDB
-- XAMPP dapat dipakai untuk database lokal
+- Node.js & npm
+- PostgreSQL (lokal atau [Neon](https://neon.tech) gratis)
 
-## Instalasi
+### Langkah-langkah
 
-Clone repository dan masuk ke folder proyek:
+**1. Clone repository**
 
 ```bash
-git clone URL_REPOSITORY_ANDA
+git clone https://github.com/vinzyid/ecommerce-msi.git
 cd ecommerce
 ```
 
-Pasang dependency PHP:
+**2. Pasang dependency**
 
 ```bash
 composer install
+npm install
 ```
 
-Buat file environment:
+**3. Siapkan environment**
 
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-Buat database MySQL:
+**4. Konfigurasi database**
 
-```sql
-CREATE DATABASE ecommerce
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-```
-
-Atur koneksi database di `.env`:
+Untuk **PostgreSQL lokal / Neon**, atur di `.env`:
 
 ```dotenv
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=ecommerce
-DB_USERNAME=root
-DB_PASSWORD=
+DB_CONNECTION=pgsql
+DB_HOST=ep-xxxxx.ap-southeast-1.aws.neon.tech
+DB_PORT=5432
+DB_DATABASE=neondb
+DB_USERNAME=username
+DB_PASSWORD=password
+DB_SSLMODE=require
+DB_PERSISTENT=false
 ```
 
-Pengguna XAMPP di macOS dapat menambahkan socket berikut:
+> ⚠️ **Penting untuk Neon:** gunakan **host direct** (tanpa `-pooler`). Host pooler memakai PgBouncer yang
+> dapat menyebabkan error `SQLSTATE[25P02]` pada transaksi checkout.
 
-```dotenv
-DB_SOCKET=/Applications/XAMPP/xamppfiles/var/mysql/mysql.sock
-```
-
-Buat tabel dan data contoh:
+**5. Migrasi & data contoh**
 
 ```bash
 php artisan migrate --seed
 ```
 
-Jalankan aplikasi:
+**6. Bangun aset frontend**
+
+```bash
+npm run build
+```
+
+---
+
+## 🚀 Menjalankan Aplikasi
 
 ```bash
 php artisan serve
 ```
 
-Buka `http://127.0.0.1:8000`.
+Buka **http://127.0.0.1:8000** di browser.
 
-## Akun Admin Development
+Untuk pengembangan dengan *hot reload*:
 
-```text
-Email    : admin@example.com
-Password : Admin123!
+```bash
+npm run dev
 ```
 
-Panel admin tersedia di `http://127.0.0.1:8000/admin` setelah login.
+> 💡 **Tips:** pastikan hanya ada **satu** proses `php artisan serve` yang berjalan. Jika ada proses menggantung,
+> hentikan dengan `Ctrl + C` atau jalankan `Get-Process php | Stop-Process -Force` (Windows).
 
-Akun tersebut hanya untuk development. Ganti password sebelum aplikasi dipasang pada server publik.
+---
 
-## Pengujian
+## 🔑 Akun Development
 
-Jalankan seluruh test:
+| Peran | Email | Password |
+|---|---|---|
+| **Admin** | `haloadmin@vinzyplay.test` | *(lihat seeder)* |
+| **Pelanggan** | `budi@example.com` | `Password123!` |
+
+Panel admin tersedia di **http://127.0.0.1:8000/admin**.
+
+> 🔒 Akun di atas hanya untuk development. **Ganti password sebelum deploy ke server publik.**
+
+---
+
+## 🧪 Pengujian
 
 ```bash
 php artisan test
 ```
 
-Test memakai SQLite in-memory dan tidak mengubah database MySQL development.
+---
 
-## Data Contoh
-
-`php artisan migrate --seed` membuat:
-
-- 1 akun admin dan 3 akun pelanggan
-- 4 kategori
-- 16 produk dengan variasi harga, harga promo, label, dan atribut
-- ulasan contoh untuk setiap produk
-- 3 kode voucher: `HEMAT10`, `GRATIS15`, dan `DISKON25`
-
-Password akun pelanggan development: `Password123!`
-
-## Struktur Modul
+## 📁 Struktur Proyek
 
 ```text
-app/
-├── Http/Controllers/
-│   ├── Admin/
-│   └── Auth/
-├── Http/Middleware/
-├── Models/
-└── Support/
-
-database/
-├── migrations/
-└── seeders/
-
-resources/views/
-├── admin/
-├── auth/
-├── cart/
-├── catalog/
-├── checkout/
-├── components/
-├── errors/
-├── layouts/
-├── orders/
-├── pages/
-├── partials/
-└── wishlist/
-
-public/
-├── css/
-└── images/products/
+ecommerce/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Admin/          # Controller panel admin
+│   │   │   ├── Auth/           # Login & register
+│   │   │   ├── CartController.php
+│   │   │   ├── CatalogController.php
+│   │   │   ├── ChatbotController.php
+│   │   │   ├── CheckoutController.php
+│   │   │   ├── OrderController.php
+│   │   │   └── ReviewController.php
+│   │   └── Middleware/
+│   ├── Models/                 # Eloquent: Product, Order, UserAddress, dll
+│   ├── Services/               # ChatbotService (integrasi AI)
+│   └── Support/                # CartCalculator (logika keranjang)
+│
+├── database/
+│   ├── migrations/             # 10 file migrasi skema
+│   └── seeders/
+│
+├── resources/
+│   ├── css/app.css             # Tema Tailwind (brand, ink, accent)
+│   ├── js/app.js               # Toast, chatbot, carousel, password toggle
+│   └── views/
+│       ├── account/            # Profil, alamat, keamanan
+│       ├── admin/              # Panel admin & dashboard chatbot
+│       ├── auth/
+│       ├── cart/
+│       ├── catalog/            # Beranda, detail produk, promo
+│       ├── checkout/
+│       ├── components/         # Product card, stars, badge
+│       ├── layouts/
+│       ├── orders/             # Detail + timeline pelacakan
+│       ├── partials/           # Chatbot widget, icons
+│       └── wishlist/
+│
+├── public/
+│   └── images/products/        # Foto produk
+│
+├── FLOW_DATABASE.md            # 📊 Diagram database & alur data
+├── PRESENTASI_PROYEK.md        # 📽️ Materi presentasi
+└── PRD-auth-ecommerce.md       # 📄 Product Requirements Document
 ```
 
-## Dokumentasi Produk
+---
 
-Spesifikasi fitur, model data, aturan checkout, dan acceptance criteria tersedia di [`PRD-auth-ecommerce.md`](PRD-auth-ecommerce.md).
+## 📚 Dokumentasi Tambahan
 
-## Foto Produk
+| Dokumen | Isi |
+|---|---|
+| 📊 [`FLOW_DATABASE.md`](FLOW_DATABASE.md) | Diagram ERD (Mermaid), relasi, alur checkout, chatbot, ulasan |
+| 📽️ [`PRESENTASI_PROYEK.md`](PRESENTASI_PROYEK.md) | Ringkasan proyek siap dijadikan slide presentasi PPT |
+| 📄 [`PRD-auth-ecommerce.md`](PRD-auth-ecommerce.md) | Product Requirements Document lengkap |
 
-Foto produk berasal dari [Pexels](https://www.pexels.com/) dan disimpan di `public/images/products`. Penggunaan foto mengikuti lisensi Pexels.
+---
 
-## Catatan GitHub
+## 📝 Catatan
 
-Jangan memasukkan file `.env`, password database, atau file log ke repository. Laravel sudah mencantumkan file tersebut dalam `.gitignore`.
+- **Data contoh** (`php artisan migrate --seed`) berisi akun admin, pelanggan, kategori, produk, ulasan, dan voucher.
+- **Foto produk** tersimpan di `public/images/products`.
+- Jangan commit file `.env`, password database, atau log. Laravel sudah menanganinya via `.gitignore`.
 
-Folder `vendor` tidak perlu diunggah. Pengguna repository memasang dependency dengan `composer install`.
+---
+
+<div align="center">
+
+**VinzyPlay** · Gaming, Diecast & Hobi
+
+Dibuat dengan ❤️ untuk Praktik MSI
+
+</div>
