@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\ChatbotMessage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,16 +28,24 @@ class ChatbotController extends Controller
         return view('admin.chatbot.index', compact('messages', 'stats', 'search'));
     }
 
-    public function destroy(ChatbotMessage $chatbotMessage): RedirectResponse
+    public function destroy(Request $request, ChatbotMessage $chatbotMessage): RedirectResponse
     {
         $chatbotMessage->delete();
+
+        AuditLog::log('chatbot.cache_deleted', "Entri cache chatbot #{$chatbotMessage->id} dihapus.", $request, [
+            'chatbot_message_id' => $chatbotMessage->id,
+        ]);
 
         return back()->with('success', 'Entri cache chatbot dihapus.');
     }
 
-    public function purge(): RedirectResponse
+    public function purge(Request $request): RedirectResponse
     {
         $deleted = ChatbotMessage::query()->delete();
+
+        AuditLog::log('chatbot.cache_purged', "Semua cache chatbot ({$deleted} entri) dibersihkan.", $request, [
+            'deleted' => $deleted,
+        ]);
 
         return back()->with('success', "Semua cache chatbot ({$deleted} entri) dibersihkan.");
     }

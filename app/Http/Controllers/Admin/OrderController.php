@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,7 +45,16 @@ class OrderController extends Controller
             return back()->withErrors(['status' => 'Status pesanan ini sudah final.']);
         }
 
+        $oldStatus = $order->status;
+
         $order->update(['status' => $validated['status']]);
+
+        AuditLog::log('order.status_changed', "Status pesanan {$order->order_number} diubah dari {$oldStatus} ke {$validated['status']}.", $request, [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'from' => $oldStatus,
+            'to' => $validated['status'],
+        ]);
 
         return back()->with('success', 'Status pesanan diperbarui.');
     }

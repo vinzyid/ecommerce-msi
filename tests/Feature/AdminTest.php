@@ -152,4 +152,50 @@ class AdminTest extends TestCase
             ->assertSessionHasErrors('is_admin');
         $this->assertDatabaseHas('users', ['id' => $admin->id, 'is_admin' => true]);
     }
+
+    public function test_role_change_is_recorded_in_audit_log(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+
+        $this->actingAs($admin)->patch("/admin/users/{$customer->id}/role", ['is_admin' => '1'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $admin->id,
+            'action' => 'user.role_changed',
+        ]);
+
+        $log = \App\Models\AuditLog::where('action', 'user.role_changed')->firstOrFail();
+        $this->assertSame($customer->id, $log->properties['target_user_id']);
+        $this->assertSame('customer', $log->properties['from']);
+        $this->assertSame('admin', $log->properties['to']);
+    }
+
+    public function test_order_status_change_is_recorded_in_audit_log(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create();
+        $order = Order::create([
+            'order_number' => 'ETL-AUDIT-001',
+            'user_id' => $customer->id,
+            'customer_name' => 'Pelanggan Uji',
+            'phone' => '08123456789',
+            'address' => 'Alamat pelanggan untuk pengujian',
+            'payment_method' => 'cod',
+            'subtotal' => 50000,
+            'shipping_cost' => 15000,
+            'total' => 65000,
+            'status' => 'pending',
+            'ordered_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->patch("/admin/orders/{$order->id}/status", ['status' => 'processing'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $admin->id,
+            'action' => 'order.status_changed',
+        ]);
+    }
 }

@@ -233,7 +233,9 @@ class ChatbotService
         $apiKey = config('services.chatbot.api_key');
 
         if (empty($apiKey)) {
-            throw new RuntimeException('CHATBOT_API_KEY belum diatur di file .env.');
+            Log::warning('Chatbot dipanggil namun CHATBOT_API_KEY kosong.');
+
+            throw new RuntimeException('Layanan chatbot sedang tidak tersedia.');
         }
 
         $baseUrl = rtrim((string) config('services.chatbot.base_url'), '/');
@@ -259,7 +261,7 @@ class ChatbotService
                 'body' => $response->body(),
             ]);
 
-            throw new RuntimeException('Gagal menghubungi layanan chatbot (HTTP '.$response->status().').');
+            throw new RuntimeException('Layanan chatbot sedang sibuk. Silakan coba lagi nanti.');
         }
 
         $answer = data_get($response->json(), 'choices.0.message.content');

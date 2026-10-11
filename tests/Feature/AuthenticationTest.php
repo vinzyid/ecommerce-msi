@@ -39,8 +39,8 @@ class AuthenticationTest extends TestCase
         $response = $this->post('/register', [
             'username' => 'vinzy_store',
             'email' => 'vinzy@example.com',
-            'password' => 'rahasia',
-            'password_confirmation' => 'rahasia',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
         ]);
 
         $response->assertRedirect('/');
@@ -48,8 +48,8 @@ class AuthenticationTest extends TestCase
 
         $user = User::where('email', 'vinzy@example.com')->firstOrFail();
         $this->assertSame('vinzy_store', $user->username);
-        $this->assertTrue(Hash::check('rahasia', $user->password));
-        $this->assertNotSame('rahasia', $user->password);
+        $this->assertTrue(Hash::check('rahasia123', $user->password));
+        $this->assertNotSame('rahasia123', $user->password);
     }
 
     public function test_username_and_email_must_be_unique(): void
@@ -62,8 +62,8 @@ class AuthenticationTest extends TestCase
         $response = $this->from('/register')->post('/register', [
             'username' => 'member_satu',
             'email' => 'member@example.com',
-            'password' => 'rahasia',
-            'password_confirmation' => 'rahasia',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
         ]);
 
         $response->assertRedirect('/register')
@@ -124,5 +124,44 @@ class AuthenticationTest extends TestCase
 
         $response->assertRedirect('/login');
         $this->assertGuest();
+    }
+
+    public function test_login_is_rate_limited_after_repeated_attempts(): void
+    {
+        User::factory()->create([
+            'username' => 'member_satu',
+            'password' => Hash::make('rahasia123'),
+        ]);
+
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            $this->from('/login')->post('/login', [
+                'identity' => 'member_satu',
+                'password' => 'password-salah',
+            ])->assertRedirect('/login');
+        }
+
+        $this->from('/login')->post('/login', [
+            'identity' => 'member_satu',
+            'password' => 'rahasia123',
+        ])->assertStatus(429);
+    }
+
+    public function test_registration_is_rate_limited(): void
+    {
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            $this->post('/register', [
+                'username' => 'spammer_'.$attempt,
+                'email' => "spammer{$attempt}@example.com",
+                'password' => 'rahasia123',
+                'password_confirmation' => 'rahasia123',
+            ]);
+        }
+
+        $this->post('/register', [
+            'username' => 'spammer_terakhir',
+            'email' => 'spammer-terakhir@example.com',
+            'password' => 'rahasia123',
+            'password_confirmation' => 'rahasia123',
+        ])->assertStatus(429);
     }
 }

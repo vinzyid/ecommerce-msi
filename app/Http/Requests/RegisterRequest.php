@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
 {
@@ -12,14 +13,14 @@ class RegisterRequest extends FormRequest
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
             'username' => 'required|string|min:3|max:50|alpha_dash|unique:users,username',
             'email' => 'required|email|max:100|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => ['required', 'string', 'confirmed', Password::min(8)->letters()->numbers()],
         ];
     }
 
@@ -41,7 +42,6 @@ class RegisterRequest extends FormRequest
             'email.unique' => 'Email sudah terdaftar.',
             'password.required' => 'Password wajib diisi.',
             'password.string' => 'Password harus berupa teks.',
-            'password.min' => 'Password minimal 6 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ];
     }

@@ -26,13 +26,17 @@ Route::get('/kategori', [CatalogController::class, 'categories'])->name('categor
 Route::get('/products/{product}', [CatalogController::class, 'show'])->name('products.show');
 
 // Chatbot konsumen (boleh diakses tanpa login).
-Route::post('/chatbot', [ChatbotController::class, 'ask'])->name('chatbot.ask');
+Route::post('/chatbot', [ChatbotController::class, 'ask'])
+    ->middleware('throttle:chatbot')
+    ->name('chatbot.ask');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store']);
+    Route::post('/register', [RegisterController::class, 'store'])
+        ->middleware('throttle:register');
     Route::get('/login', [LoginController::class, 'create'])->name('login');
-    Route::post('/login', [LoginController::class, 'store']);
+    Route::post('/login', [LoginController::class, 'store'])
+        ->middleware('throttle:login');
 });
 
 Route::middleware('auth')->group(function () {

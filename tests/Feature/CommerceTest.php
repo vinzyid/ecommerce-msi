@@ -185,6 +185,17 @@ class CommerceTest extends TestCase
         $user = User::factory()->create();
         $product = $this->product($this->category());
 
+        // Ulasan hanya boleh untuk produk yang sudah dibeli.
+        $order = $this->order($user);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'sku' => $product->sku,
+            'price' => $product->price,
+            'quantity' => 1,
+            'subtotal' => $product->price,
+        ]);
+
         $this->actingAs($user)->post("/products/{$product->slug}/reviews", [
             'rating' => 5,
             'comment' => 'Produk sangat bagus.',

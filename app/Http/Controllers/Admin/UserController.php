@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -59,7 +61,27 @@ class UserController extends Controller
             return back()->withErrors(['is_admin' => 'Anda tidak dapat menurunkan peran akun sendiri.']);
         }
 
+        $oldRole = $user->is_admin ? 'admin' : 'customer';
+        $newRole = $validated['is_admin'] ? 'admin' : 'customer';
+
         $user->update(['is_admin' => $validated['is_admin']]);
+
+        Log::info('Admin role change', [
+            'actor_id' => $request->user()->id,
+            'actor_username' => $request->user()->username,
+            'target_user_id' => $user->id,
+            'target_username' => $user->username,
+            'from' => $oldRole,
+            'to' => $newRole,
+            'ip' => $request->ip(),
+        ]);
+
+        AuditLog::log('user.role_changed', "Peran {$user->username} diubah dari {$oldRole} ke {$newRole}.", $request, [
+            'target_user_id' => $user->id,
+            'target_username' => $user->username,
+            'from' => $oldRole,
+            'to' => $newRole,
+        ]);
 
         return back()->with('success', 'Peran akun '.$user->username.' diperbarui.');
     }
