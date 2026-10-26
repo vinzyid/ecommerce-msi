@@ -6,46 +6,52 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-    /* Brand — marketplace gaming */
-    --color-brand-50: #eef6ff;
-    --color-brand-100: #d9ebff;
-    --color-brand-200: #bcdcff;
-    --color-brand-300: #8ec5ff;
-    --color-brand-400: #59a4ff;
-    --color-brand-500: #2f83ff;
-    --color-brand-600: #1565f0;
-    --color-brand-700: #0f51d0;
-    --color-brand-800: #133fa6;
-    --color-brand-900: #143a82;
-    --color-brand-950: #0d224f;
+    /* Satu aksen: biru tenang. Sisanya netral agar produk yang menonjol. */
+    --color-brand-50: #f0f7ff;
+    --color-brand-100: #ddeeff;
+    --color-brand-200: #b8dbff;
+    --color-brand-300: #85c1ff;
+    --color-brand-400: #4aa1ff;
+    --color-brand-500: #1a85ff;
+    --color-brand-600: #0071e3;
+    --color-brand-700: #0062c4;
+    --color-brand-800: #004f9e;
+    --color-brand-900: #003e7a;
+    --color-brand-950: #00264d;
 
-    --color-ink-50: #f5f7fa;
-    --color-ink-100: #e9eef5;
-    --color-ink-200: #cfd9e6;
-    --color-ink-300: #a6b7cd;
-    --color-ink-400: #7590ae;
-    --color-ink-500: #547193;
-    --color-ink-600: #415a78;
-    --color-ink-700: #374a61;
-    --color-ink-800: #314052;
-    --color-ink-900: #101a2b;
-    --color-ink-950: #08101d;
+    /* Abu-abu netral (tanpa rona biru) */
+    --color-ink-50: #f5f5f7;
+    --color-ink-100: #ebebef;
+    --color-ink-200: #d9d9de;
+    --color-ink-300: #b4b4ba;
+    --color-ink-400: #8e8e93;
+    --color-ink-500: #6e6e73;
+    --color-ink-600: #545458;
+    --color-ink-700: #3a3a3c;
+    --color-ink-800: #2c2c2e;
+    --color-ink-900: #1d1d1f;
+    --color-ink-950: #0b0b0c;
 
     --color-accent-400: #ffb020;
     --color-accent-500: #ff9500;
     --color-accent-600: #e07800;
 
-    --color-danger-500: #f43f5e;
-    --color-danger-600: #e11d48;
-    --color-success-500: #10b981;
-    --color-success-600: #059669;
+    --color-danger-500: #e5484d;
+    --color-danger-600: #d1343a;
+    --color-success-500: #30a46c;
+    --color-success-600: #218358;
 
-    --shadow-card: 0 1px 2px rgb(16 26 43 / 0.06), 0 8px 24px -12px rgb(16 26 43 / 0.18);
-    --shadow-lift: 0 2px 4px rgb(16 26 43 / 0.08), 0 18px 40px -16px rgb(16 26 43 / 0.28);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -10px rgb(0 0 0 / 0.1);
+    --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.05), 0 20px 44px -18px rgb(0 0 0 / 0.18);
 
     --radius-xl2: 1.25rem;
+
+    /* Kurva gerak — bawaan CSS terlalu lemah untuk UI */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @layer base {
@@ -56,14 +62,99 @@
 
     body {
         font-family: var(--font-sans);
+        font-feature-settings: 'cv11', 'ss01';
         color: var(--color-ink-900);
-        background-color: #f4f6fb;
+        background-color: #fff;
+    }
+
+    h1,
+    h2,
+    h3 {
+        letter-spacing: -0.02em;
     }
 
     ::selection {
         background: var(--color-brand-600);
         color: #fff;
     }
+
+    /* Ikon sprite: tebal garis default bila <svg> tidak menentukannya sendiri */
+    svg:not([stroke-width]):has(> use[href^='#i-']) {
+        stroke-width: 1.8;
+    }
+
+    /* Umpan balik tekan: tombol terasa "mendengar" klik */
+    button:not(:disabled),
+    .press {
+        transition-property: color, background-color, border-color, box-shadow, opacity, scale, translate;
+        transition-timing-function: var(--ease-out);
+        transition-duration: 160ms;
+    }
+
+    button:not(:disabled):active,
+    .press:active {
+        scale: 0.97;
+    }
+
+    /* Gerak dikurangi = lebih sedikit & lebih lembut, bukan nol */
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+            animation-duration: 1ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+        }
+
+        [data-reveal],
+        [data-reveal-item],
+        [data-mobile-panel],
+        [data-chatbot-panel],
+        [data-dropdown-menu] {
+            translate: none !important;
+            scale: none !important;
+        }
+
+        button:not(:disabled):active,
+        .press:active {
+            scale: none;
+        }
+    }
+}
+
+/* Reveal saat scroll: geser kecil + fade, kurva ease-out kuat */
+[data-reveal].is-pending,
+[data-reveal-item].is-pending {
+    opacity: 0;
+    translate: 0 12px;
+}
+
+[data-reveal],
+[data-reveal-item] {
+    transition: opacity 500ms var(--ease-out), translate 500ms var(--ease-out);
+}
+
+/* Drawer menu mobile */
+[data-mobile-menu] [data-mobile-backdrop] {
+    opacity: 0;
+    transition: opacity 240ms ease;
+}
+
+[data-mobile-menu] [data-mobile-panel] {
+    translate: -100% 0;
+    transition: translate 320ms var(--ease-drawer);
+}
+
+[data-mobile-menu].is-open [data-mobile-backdrop] {
+    opacity: 1;
+}
+
+[data-mobile-menu].is-open [data-mobile-panel] {
+    translate: 0 0;
 }
 
 @utility container-page {
@@ -83,5 +174,144 @@
 
     &::-webkit-scrollbar {
         display: none;
+    }
+}
+
+/* ---------- Chatbot ---------- */
+[data-chatbot-panel] {
+    opacity: 0;
+    translate: 0 8px;
+    scale: 0.96;
+    transform-origin: bottom right;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+        opacity 200ms var(--ease-out),
+        translate 200ms var(--ease-out),
+        scale 200ms var(--ease-out),
+        visibility 0s linear 200ms;
+}
+
+[data-chatbot].is-open [data-chatbot-panel] {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+}
+
+[data-chatbot].is-open [data-chatbot-badge] {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Saran pertanyaan hanya tampil sebelum percakapan dimulai */
+[data-chatbot-messages]:has(> :nth-child(2)) [data-chatbot-suggestions] {
+    display: none;
+}
+
+/* Ponsel: panel layar penuh seperti aplikasi chat, tombol bulat disembunyikan */
+@media (max-width: 639px) {
+    [data-chatbot-panel] {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        scale: 1;
+        translate: 0 24px;
+    }
+
+    [data-chatbot].is-open [data-chatbot-launcher] {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+/* Indikator "sedang mengetik" */
+.chatbot-typing span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--color-ink-400);
+    animation: chatbot-typing 1s ease-in-out infinite;
+}
+
+.chatbot-typing span:nth-child(2) {
+    animation-delay: 150ms;
+}
+
+.chatbot-typing span:nth-child(3) {
+    animation-delay: 300ms;
+}
+
+@keyframes chatbot-typing {
+    0%,
+    60%,
+    100% {
+        opacity: 0.35;
+        translate: 0 0;
+    }
+
+    30% {
+        opacity: 1;
+        translate: 0 -3px;
+    }
+}
+
+/* Kursor saat jawaban sedang mengalir */
+.chatbot-streaming > :last-child::after {
+    content: '';
+    display: inline-block;
+    width: 0.45em;
+    height: 1em;
+    margin-left: 2px;
+    vertical-align: -0.15em;
+    border-radius: 2px;
+    background: var(--color-brand-500);
+    animation: chatbot-caret 900ms steps(2, start) infinite;
+}
+
+@keyframes chatbot-caret {
+    to {
+        visibility: hidden;
+    }
+}
+
+/* ---------- Banner berjalan ---------- */
+.carousel-dot {
+    transition: width 300ms var(--ease-out), background-color 200ms ease;
+}
+
+.carousel-dot[aria-selected='true'] {
+    width: 1.75rem;
+}
+
+.carousel-dot-fill {
+    scale: 0 1;
+}
+
+/* Isi titik aktif = sisa waktu slide; selesai mengisi -> slide berikutnya */
+.carousel-dot[aria-selected='true'] .carousel-dot-fill {
+    animation: carousel-progress var(--carousel-interval, 6000ms) linear forwards;
+}
+
+[data-carousel][data-paused] .carousel-dot-fill {
+    animation-play-state: paused;
+}
+
+@keyframes carousel-progress {
+    from {
+        scale: 0 1;
+    }
+
+    to {
+        scale: 1 1;
     }
 }

@@ -5,10 +5,10 @@
 @section('content')
 <div class="container-page pt-6">
     <div class="mx-auto max-w-3xl">
-        <header class="overflow-hidden rounded-2xl bg-gradient-to-br from-ink-950 via-ink-900 to-brand-950 p-6 text-white sm:p-9">
-            <span class="text-xs font-bold uppercase tracking-wide text-brand-300">Informasi / Tentang</span>
-            <h1 class="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">Tentang {{ config('app.name') }}</h1>
-            <p class="mt-2 text-sm leading-relaxed text-white/70">
+        <header class="overflow-hidden rounded-[1.75rem] bg-ink-50 p-6 text-ink-900 sm:p-9">
+            <span class="text-xs font-medium text-brand-600">Informasi / Tentang</span>
+            <h1 class="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Tentang {{ config('app.name') }}</h1>
+            <p class="mt-2 text-sm leading-relaxed text-ink-500">
                 Toko online perlengkapan gaming, diecast, dan hobi koleksi untuk main, kerja, dan koleksi.
             </p>
         </header>
@@ -58,7 +58,7 @@
         </div>
 
         <div class="mt-6 flex flex-wrap gap-3">
-            <a href="{{ route('home') }}" class="rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-700">Mulai belanja</a>
+            <a href="{{ route('home') }}" class="rounded-full bg-ink-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-ink-700">Mulai belanja</a>
             <a href="{{ route('promo') }}" class="rounded-xl border border-ink-200 bg-white px-6 py-3 text-sm font-bold text-ink-700 transition hover:border-ink-300">Lihat promo</a>
         </div>
     </div>

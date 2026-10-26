@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>@yield('title', 'Admin — '.config('app.name'))</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.icons')
 </head>
-<body class="min-h-screen bg-[#f4f6fb] text-ink-900 antialiased">
+<body class="min-h-screen bg-ink-50 text-ink-900 antialiased">
 
 <div class="flex min-h-screen">
     {{-- Sidebar --}}
     <aside class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-ink-100 bg-white lg:flex">
         <div class="flex h-16 items-center gap-2 border-b border-ink-100 px-5">
-            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-lg font-black text-white">N</span>
-            <span class="text-base font-extrabold">Vinzy<span class="text-brand-600">Play</span></span>
+            <x-logo />
         </div>
         @include('admin._nav')
         <div class="mt-auto border-t border-ink-100 p-3">

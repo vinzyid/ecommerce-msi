@@ -6,23 +6,23 @@
 <div class="container-page pt-6">
     <div class="mx-auto max-w-5xl">
         {{-- Hero Profil --}}
-        <header class="overflow-hidden rounded-2xl bg-gradient-to-br from-ink-950 via-ink-900 to-brand-950 p-6 text-white sm:p-8">
-            <span class="text-xs font-bold uppercase tracking-wide text-brand-300">Akun / Pusat Pelanggan</span>
+        <header class="overflow-hidden rounded-[1.75rem] bg-ink-50 p-6 text-ink-900 sm:p-8">
+            <span class="text-xs font-medium text-brand-600">Akun / Pusat Pelanggan</span>
             <div class="mt-4 flex flex-wrap items-center gap-4">
-                <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-2xl font-black ring-1 ring-white/20">
+                <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-ink-900 text-2xl font-semibold text-white">
                     {{ $user->initials() }}
                 </span>
                 <div class="min-w-0 flex-1">
-                    <h1 class="text-xl font-extrabold tracking-tight sm:text-2xl">Halo, {{ $user->username }} 👋</h1>
-                    <p class="mt-0.5 truncate text-sm text-white/70">{{ $user->email }}</p>
+                    <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Halo, {{ $user->username }} 👋</h1>
+                    <p class="mt-0.5 truncate text-sm text-ink-500">{{ $user->email }}</p>
                     <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-                        <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-1 font-semibold text-emerald-300 ring-1 ring-emerald-400/30">
-                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> Akun Aktif
+                        <span class="inline-flex items-center gap-1 rounded-full bg-success-500/10 px-2.5 py-1 font-medium text-success-600">
+                            <span class="h-1.5 w-1.5 rounded-full bg-success-500"></span> Akun aktif
                         </span>
-                        <span class="rounded-full bg-white/10 px-2.5 py-1 font-semibold text-white/80 ring-1 ring-white/15">
+                        <span class="rounded-full bg-white px-2.5 py-1 font-medium text-ink-600 ring-1 ring-ink-100">
                             {{ $user->is_admin ? 'Admin' : 'Pelanggan' }}
                         </span>
-                        <span class="rounded-full bg-white/10 px-2.5 py-1 font-semibold text-white/80 ring-1 ring-white/15">
+                        <span class="rounded-full bg-white px-2.5 py-1 font-medium text-ink-600 ring-1 ring-ink-100">
                             Bergabung {{ $user->created_at->translatedFormat('M Y') }}
                         </span>
                     </div>
@@ -43,7 +43,7 @@
                         <svg class="h-5 w-5"><use href="#{{ $icon }}"/></svg>
                     </span>
                     <span class="mt-2.5 block text-[11px] font-semibold text-ink-500">{{ $label }}</span>
-                    <strong class="mt-0.5 block truncate text-lg font-extrabold tracking-tight text-ink-900">{{ $value }}</strong>
+                    <strong class="mt-0.5 block truncate text-lg font-semibold tracking-tight text-ink-900">{{ $value }}</strong>
                 </div>
             @endforeach
         </section>
@@ -67,7 +67,7 @@
                         ['pesanan', 'Riwayat Pesanan', 'i-receipt'],
                     ] as [$tab, $tabLabel, $tabIcon])
                         <button type="button" data-account-tab="{{ $tab }}"
-                                class="account-tab flex flex-1 shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition {{ $loop->first ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-600 hover:bg-ink-50' }}">
+                                class="account-tab flex flex-1 shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition {{ $loop->first ? 'bg-ink-900 text-white' : 'text-ink-600 hover:bg-ink-50' }}">
                             <svg class="h-4 w-4"><use href="#{{ $tabIcon }}"/></svg>
                             {{ $tabLabel }}
                         </button>
@@ -82,7 +82,7 @@
                                 <svg class="h-5 w-5"><use href="#i-user"/></svg>
                             </span>
                             <div>
-                                <h2 class="text-base font-extrabold text-ink-900">Data Profil</h2>
+                                <h2 class="text-base font-semibold text-ink-900">Data Profil</h2>
                                 <p class="text-xs text-ink-500">Perbarui nama pengguna dan alamat email akunmu.</p>
                             </div>
                         </div>
@@ -103,7 +103,7 @@
                                 @error('email')<p class="mt-1.5 text-xs font-semibold text-danger-600">{{ $message }}</p>@enderror
                             </div>
                             <div class="flex items-center gap-3 pt-1">
-                                <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700">
+                                <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-ink-700">
                                     <svg class="h-4 w-4"><use href="#i-check"/></svg>
                                     Simpan Perubahan
                                 </button>
@@ -122,7 +122,7 @@
                                     <svg class="h-5 w-5"><use href="#i-map-pin"/></svg>
                                 </span>
                                 <div>
-                                    <h2 class="text-base font-extrabold text-ink-900">Daftar Alamat Pengiriman</h2>
+                                    <h2 class="text-base font-semibold text-ink-900">Daftar Alamat Pengiriman</h2>
                                     <p class="text-xs text-ink-500">Alamat utama otomatis dipakai saat checkout &amp; bisa diubah kapan saja.</p>
                                 </div>
                             </div>
@@ -139,7 +139,7 @@
                                             <div class="flex items-center justify-between gap-2">
                                                 <span class="text-sm font-bold text-ink-900">{{ $addr->label }}</span>
                                                 @if ($addr->is_default)
-                                                    <span class="rounded bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white">Alamat Utama</span>
+                                                    <span class="rounded bg-ink-900 px-2 py-0.5 text-[10px] font-medium text-white">Alamat Utama</span>
                                                 @endif
                                             </div>
                                             <p class="mt-2 text-sm font-bold text-ink-800">{{ $addr->recipient_name }}</p>
@@ -178,7 +178,7 @@
                                     <svg class="h-5 w-5"><use href="#i-plus"/></svg>
                                 </span>
                                 <div>
-                                    <h2 class="text-base font-extrabold text-ink-900">Tambah Alamat Baru</h2>
+                                    <h2 class="text-base font-semibold text-ink-900">Tambah Alamat Baru</h2>
                                     <p class="text-xs text-ink-500">Isi alamat untuk digunakan pada pembelian berikutnya.</p>
                                 </div>
                             </div>
@@ -238,7 +238,7 @@
                                     </div>
                                 </div>
 
-                                <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700">
+                                <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-ink-700">
                                     <svg class="h-4 w-4"><use href="#i-check"/></svg>
                                     Simpan Alamat
                                 </button>
@@ -255,7 +255,7 @@
                                 <svg class="h-5 w-5"><use href="#i-lock"/></svg>
                             </span>
                             <div>
-                                <h2 class="text-base font-extrabold text-ink-900">Keamanan Akun</h2>
+                                <h2 class="text-base font-semibold text-ink-900">Keamanan Akun</h2>
                                 <p class="text-xs text-ink-500">Ganti password secara berkala untuk menjaga keamanan akun.</p>
                             </div>
                         </div>
@@ -306,7 +306,7 @@
                 <div data-account-panel="pesanan" class="account-panel mt-4 hidden">
                     <div class="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
                         <div class="mb-4 flex items-center justify-between">
-                            <h2 class="text-base font-extrabold text-ink-900">Pesanan Terakhir</h2>
+                            <h2 class="text-base font-semibold text-ink-900">Pesanan Terakhir</h2>
                             <a href="{{ route('orders.index') }}" class="text-sm font-semibold text-brand-600 hover:text-brand-700">Lihat semua</a>
                         </div>
 
@@ -318,14 +318,14 @@
                                         <strong class="block truncate text-sm font-bold text-ink-900">{{ $order->order_number }}</strong>
                                         <span class="text-xs text-ink-500">{{ $order->ordered_at->translatedFormat('d M Y') }} &bull; {{ $order->items_count }} barang</span>
                                     </div>
-                                    <strong class="shrink-0 text-sm font-extrabold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</strong>
+                                    <strong class="shrink-0 text-sm font-semibold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</strong>
                                     <x-status-badge :status="$order->status" />
                                 </a>
                             @empty
                                 <div class="rounded-xl border border-dashed border-ink-200 py-10 text-center">
                                     <p class="font-semibold text-ink-700">Belum ada pesanan</p>
                                     <p class="mt-1 text-sm text-ink-500">Pesanan yang selesai di-checkout akan tampil di sini.</p>
-                                    <a href="{{ route('home') }}" class="mt-4 inline-block rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Buka katalog</a>
+                                    <a href="{{ route('home') }}" class="mt-4 inline-block rounded-full bg-ink-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-700">Buka katalog</a>
                                 </div>
                             @endforelse
                         </div>
@@ -336,7 +336,7 @@
             {{-- Sidebar Aksi --}}
             <aside class="space-y-4">
                 <section class="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
-                    <h2 class="text-base font-extrabold text-ink-900">Aksi Cepat</h2>
+                    <h2 class="text-base font-semibold text-ink-900">Aksi Cepat</h2>
                     <div class="mt-4 space-y-2.5">
                         <a href="{{ route('cart.index') }}"
                            class="flex items-center justify-between rounded-xl border border-ink-200 px-4 py-3 text-sm font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700">
@@ -345,7 +345,7 @@
                                 Keranjang belanja
                             </span>
                             @if ($cartCount > 0)
-                                <span class="flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-600 px-1.5 text-xs font-bold text-white">{{ $cartCount }}</span>
+                                <span class="flex h-6 min-w-6 items-center justify-center rounded-full bg-ink-900 px-1.5 text-xs font-medium text-white">{{ $cartCount }}</span>
                             @endif
                         </a>
                         <a href="{{ route('wishlist.index') }}"
@@ -384,7 +384,7 @@
                         </div>
                     </div>
                     <button type="button" onclick="document.querySelector('[data-chatbot-toggle]')?.click()"
-                            class="mt-3.5 w-full rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700">
+                            class="mt-3.5 w-full rounded-full bg-ink-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-ink-700">
                         Chat Asisten Toko
                     </button>
                 </section>

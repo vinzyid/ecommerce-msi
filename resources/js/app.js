@@ -42,18 +42,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobileMenu = document.querySelector('[data-mobile-menu]');
     if (mobileMenu) {
         const openBtn = document.querySelector('[data-mobile-toggle]');
+        const panel = mobileMenu.querySelector('[data-mobile-panel]');
         const show = () => {
             mobileMenu.classList.remove('hidden');
+            mobileMenu.offsetHeight; // paksa reflow agar transisi masuk berjalan
+            mobileMenu.classList.add('is-open');
+            openBtn?.setAttribute('aria-expanded', 'true');
             document.body.style.overflow = 'hidden';
         };
         const hide = () => {
-            mobileMenu.classList.add('hidden');
+            if (!mobileMenu.classList.contains('is-open')) return;
+            mobileMenu.classList.remove('is-open');
+            openBtn?.setAttribute('aria-expanded', 'false');
             document.body.style.overflow = '';
+            const done = () => {
+                if (!mobileMenu.classList.contains('is-open')) mobileMenu.classList.add('hidden');
+            };
+            // Sembunyikan setelah drawer selesai bergeser keluar
+            panel ? panel.addEventListener('transitionend', done, { once: true }) : done();
+            setTimeout(done, 400);
         };
 
         openBtn?.addEventListener('click', show);
         mobileMenu.querySelector('[data-mobile-close]')?.addEventListener('click', hide);
         mobileMenu.querySelector('[data-mobile-backdrop]')?.addEventListener('click', hide);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hide();
+        });
     }
 
     /* ---------- Stepper kuantitas ---------- */
@@ -75,76 +90,162 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ---------- Carousel banner ---------- */
+    // Waktu slide dikendalikan animasi pengisi titik aktif: saat animasinya selesai,
+    // slide berganti. Menjeda animasi (hover, fokus, tab tersembunyi) otomatis menjeda slider.
     document.querySelectorAll('[data-carousel]').forEach((carousel) => {
         const track = carousel.querySelector('[data-carousel-track]');
+        const viewport = carousel.querySelector('[data-carousel-viewport]') || carousel;
         const slides = Array.from(carousel.querySelectorAll('[data-carousel-slide]'));
         const dots = Array.from(carousel.querySelectorAll('[data-carousel-dot]'));
         if (!track || slides.length <= 1) return;
 
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        carousel.style.setProperty('--carousel-interval', `${parseInt(carousel.dataset.interval || '6000', 10)}ms`);
+
         let index = 0;
-        let timer = null;
+        const pause = { hover: false, focus: false, hidden: document.hidden };
 
         const go = (i) => {
             index = (i + slides.length) % slides.length;
-            track.style.transform = `translateX(-${index * 100}%)`;
-            dots.forEach((dot, di) => {
-                dot.classList.toggle('bg-white', di === index);
-                dot.classList.toggle('bg-white/40', di !== index);
+            // Pakai posisi asli slide karena ada jarak (gap) antar slide
+            track.style.transform = `translateX(-${slides[index].offsetLeft - slides[0].offsetLeft}px)`;
+            slides.forEach((slide, si) => {
+                // Slide yang tidak tampil tidak bisa difokus / dibacakan
+                slide.inert = si !== index;
+                slide.setAttribute('aria-hidden', String(si !== index));
             });
+            dots.forEach((dot, di) => dot.setAttribute('aria-selected', String(di === index)));
         };
 
-        const start = () => {
-            stop();
-            timer = setInterval(() => go(index + 1), 5000);
+        const syncPause = () => {
+            const paused = pause.hover || pause.focus || pause.hidden || reduceMotion.matches;
+            carousel.toggleAttribute('data-paused', paused);
         };
-        const stop = () => timer && clearInterval(timer);
 
-        carousel.querySelector('[data-carousel-next]')?.addEventListener('click', () => { go(index + 1); start(); });
-        carousel.querySelector('[data-carousel-prev]')?.addEventListener('click', () => { go(index - 1); start(); });
-        dots.forEach((dot, di) => dot.addEventListener('click', () => { go(di); start(); }));
+        dots.forEach((dot, di) => {
+            dot.addEventListener('click', () => go(di));
+            dot.firstElementChild?.addEventListener('animationend', () => {
+                // Dengan gerak dikurangi, animasi dipercepat 1ms: jangan ikut berganti slide
+                if (di === index && !reduceMotion.matches && !carousel.hasAttribute('data-paused')) go(index + 1);
+            });
+        });
+        carousel.querySelector('[data-carousel-next]')?.addEventListener('click', () => go(index + 1));
+        carousel.querySelector('[data-carousel-prev]')?.addEventListener('click', () => go(index - 1));
 
-        carousel.addEventListener('mouseenter', stop);
-        carousel.addEventListener('mouseleave', start);
+        carousel.addEventListener('mouseenter', () => { pause.hover = true; syncPause(); });
+        carousel.addEventListener('mouseleave', () => { pause.hover = false; syncPause(); });
+        carousel.addEventListener('focusin', () => { pause.focus = true; syncPause(); });
+        carousel.addEventListener('focusout', (e) => {
+            if (!carousel.contains(e.relatedTarget)) { pause.focus = false; syncPause(); }
+        });
+        document.addEventListener('visibilitychange', () => { pause.hidden = document.hidden; syncPause(); });
+        reduceMotion.addEventListener?.('change', syncPause);
+
+        carousel.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') go(index + 1);
+            if (e.key === 'ArrowLeft') go(index - 1);
+        });
+
+        // Geser dengan jari / mouse; kibasan cepat cukup untuk pindah slide
+        let startX = null;
+        let startTime = 0;
+        let swiped = false;
+        viewport.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            startX = e.clientX;
+            startTime = performance.now();
+            swiped = false;
+        });
+        viewport.addEventListener('pointerup', (e) => {
+            if (startX === null) return;
+            const dx = e.clientX - startX;
+            const velocity = Math.abs(dx) / Math.max(1, performance.now() - startTime);
+            startX = null;
+            if (Math.abs(dx) > 60 || (Math.abs(dx) > 15 && velocity > 0.4)) {
+                swiped = true;
+                go(index + (dx < 0 ? 1 : -1));
+            }
+        });
+        viewport.addEventListener('pointercancel', () => { startX = null; });
+        // Klik setelah menggeser jangan membuka tautan produk
+        viewport.addEventListener('click', (e) => {
+            if (swiped) {
+                e.preventDefault();
+                swiped = false;
+            }
+        }, true);
+        viewport.addEventListener('dragstart', (e) => e.preventDefault());
+
+        // Saat ukuran layar berubah, sesuaikan posisi tanpa animasi
+        let resizeFrame = 0;
+        window.addEventListener('resize', () => {
+            cancelAnimationFrame(resizeFrame);
+            resizeFrame = requestAnimationFrame(() => {
+                track.style.transitionDuration = '0ms';
+                go(index);
+                track.offsetHeight;
+                track.style.transitionDuration = '';
+            });
+        });
 
         go(0);
-        start();
+        syncPause();
+    });
+
+    /* ---------- Hitung mundur flash sale ---------- */
+    // Berbasis jam server (bukan jam perangkat) dan tidak ter-reset saat halaman dimuat ulang.
+    document.querySelectorAll('[data-countdown]').forEach((el) => {
+        const DAY = 24 * 60 * 60 * 1000;
+        let end = parseInt(el.dataset.countdownEnd, 10);
+        const offset = parseInt(el.dataset.countdownNow, 10) - Date.now();
+        const parts = {
+            h: el.querySelector('[data-countdown-hours]'),
+            m: el.querySelector('[data-countdown-minutes]'),
+            s: el.querySelector('[data-countdown-seconds]'),
+        };
+        if (!end || !parts.h) return;
+
+        const pad = (n) => String(n).padStart(2, '0');
+        const tick = () => {
+            let left = end - (Date.now() + offset);
+            // Flash sale harian: lewat tengah malam langsung lanjut ke hari berikutnya
+            while (left <= 0) {
+                end += DAY;
+                left = end - (Date.now() + offset);
+            }
+            const total = Math.floor(left / 1000);
+            parts.h.textContent = pad(Math.floor(total / 3600));
+            parts.m.textContent = pad(Math.floor((total % 3600) / 60));
+            parts.s.textContent = pad(total % 60);
+        };
+
+        tick();
+        setInterval(tick, 1000);
     });
 
     /* ---------- Reveal saat scroll ---------- */
-    const revealTargets = document.querySelectorAll('[data-reveal]');
+    // Section yang berisi kartu produk tidak ikut fade, kartunya yang masuk bergiliran.
+    const revealTargets = [
+        ...Array.from(document.querySelectorAll('[data-reveal]')).filter((el) => !el.querySelector('[data-reveal-item]')),
+        ...document.querySelectorAll('[data-reveal-item]'),
+    ];
     if (revealTargets.length && 'IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.remove('opacity-0', 'translate-y-4');
-                    observer.unobserve(entry.target);
-                }
+            const entering = entries.filter((entry) => entry.isIntersecting);
+            entering.forEach((entry, i) => {
+                // Stagger 40ms antar kartu, dibatasi agar tidak terasa lambat
+                entry.target.style.transitionDelay = `${Math.min(i, 6) * 40}ms`;
+                entry.target.classList.remove('is-pending');
+                observer.unobserve(entry.target);
             });
-        }, { threshold: 0.08 });
+        }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
 
         revealTargets.forEach((el) => {
-            el.classList.add('transition', 'duration-500', 'opacity-0', 'translate-y-4');
+            // Yang sudah terlihat saat halaman dibuka tidak perlu dianimasikan
+            if (el.getBoundingClientRect().top < window.innerHeight) return;
+            el.classList.add('is-pending');
             observer.observe(el);
         });
-    }
-
-    /* ---------- Flash Sale Countdown Timer (Shopee / Tokopedia Style) ---------- */
-    const timerEl = document.querySelector('[data-flash-sale-timer]');
-    if (timerEl) {
-        let totalSeconds = 2 * 3600 + 45 * 60 + 30; // 02:45:30
-        const hEl = timerEl.querySelector('[data-hours]');
-        const mEl = timerEl.querySelector('[data-minutes]');
-        const sEl = timerEl.querySelector('[data-seconds]');
-
-        setInterval(() => {
-            if (totalSeconds > 0) totalSeconds--;
-            const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-            const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-            const seconds = String(totalSeconds % 60).padStart(2, '0');
-            if (hEl) hEl.textContent = hours;
-            if (mEl) mEl.textContent = minutes;
-            if (sEl) sEl.textContent = seconds;
-        }, 1000);
     }
 
     /* ---------- Salin Kode Voucher & Teks ---------- */
@@ -155,12 +256,10 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await navigator.clipboard.writeText(code);
                 const originalText = btn.textContent;
-                btn.textContent = 'Tersalin!';
-                btn.classList.add('bg-emerald-600', 'text-white');
+                btn.textContent = 'Tersalin';
                 showToast(`Kode "${code}" berhasil disalin ke clipboard!`, 'success', 'Tersalin!');
                 setTimeout(() => {
                     btn.textContent = originalText;
-                    btn.classList.remove('bg-emerald-600', 'text-white');
                 }, 2000);
             } catch {
                 showToast(`Gagal menyalin teks: ${code}`, 'error');
@@ -269,7 +368,7 @@ function showToast(message, type = 'success', title = null) {
 
     const toast = document.createElement('div');
     toast.className =
-        'pointer-events-auto relative flex translate-y-[-12px] items-start gap-3 overflow-hidden rounded-2xl border border-ink-100 bg-white/95 p-3.5 opacity-0 shadow-2xl backdrop-blur-md transition-all duration-300 ease-out';
+        'pointer-events-auto relative flex -translate-y-3 scale-[0.97] items-start gap-3 overflow-hidden rounded-2xl border border-ink-100 bg-white/95 p-3.5 opacity-0 shadow-2xl backdrop-blur-md transition-[opacity,translate,scale] duration-300 ease-(--ease-out)';
     toast.innerHTML =
         `<span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${s.ring}">` +
         `<svg class="h-5.5 w-5.5"><use href="#${s.icon}"/></svg></span>` +
@@ -279,34 +378,41 @@ function showToast(message, type = 'success', title = null) {
         `</div>` +
         `<button type="button" class="shrink-0 rounded-lg p-1 text-ink-400 transition hover:bg-ink-50 hover:text-ink-700" aria-label="Tutup notifikasi">` +
         `<svg class="h-4 w-4"><use href="#i-close"/></svg></button>` +
-        `<span class="absolute bottom-0 left-0 h-0.5 ${s.bar}" style="width:100%"></span>`;
+        `<span class="absolute inset-x-0 bottom-0 h-0.5 origin-left ${s.bar}"></span>`;
 
     container.appendChild(toast);
     playChime(type);
 
-    // Animasi masuk
-    requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-[-12px]', 'opacity-0');
-        toast.classList.add('translate-y-0', 'opacity-100');
-    });
+    // Animasi masuk (paksa reflow dulu agar state awal ter-render)
+    toast.offsetHeight;
+    toast.classList.remove('-translate-y-3', 'scale-[0.97]', 'opacity-0');
 
-    // Progress bar mengecil
-    const bar = toast.querySelector('span.absolute');
-    if (bar) {
-        requestAnimationFrame(() => {
-            bar.style.transition = 'width 4.5s linear';
-            bar.style.width = '0%';
-        });
-    }
-
-    // Fungsi tutup
+    // Fungsi tutup: keluar ke arah yang sama dengan masuk, lebih cepat
+    let closed = false;
     const dismiss = () => {
-        toast.classList.add('translate-y-[-12px]', 'opacity-0');
-        setTimeout(() => toast.remove(), 300);
+        if (closed) return;
+        closed = true;
+        document.removeEventListener('visibilitychange', onVisibility);
+        toast.classList.replace('duration-300', 'duration-200');
+        toast.classList.add('-translate-y-3', 'opacity-0');
+        setTimeout(() => toast.remove(), 200);
     };
 
+    // Progress bar sekaligus jadi timer, dijeda saat di-hover atau tab disembunyikan
+    const bar = toast.querySelector('span.absolute');
+    const timer = bar.animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], {
+        duration: 4500,
+        easing: 'linear',
+        fill: 'forwards',
+    });
+    timer.onfinish = dismiss;
+
+    const onVisibility = () => (document.hidden ? timer.pause() : timer.play());
+    document.addEventListener('visibilitychange', onVisibility);
+    toast.addEventListener('mouseenter', () => timer.pause());
+    toast.addEventListener('mouseleave', () => !document.hidden && timer.play());
+
     toast.querySelector('button')?.addEventListener('click', dismiss);
-    setTimeout(dismiss, 4500);
 }
 
 /**
@@ -333,240 +439,487 @@ function initChatbot() {
     const toggle = root.querySelector('[data-chatbot-toggle]');
     const closeBtn = root.querySelector('[data-chatbot-close]');
     const clearBtn = root.querySelector('[data-chatbot-clear]');
+    const confirmBar = root.querySelector('[data-chatbot-confirm]');
     const form = root.querySelector('[data-chatbot-form]');
     const input = root.querySelector('[data-chatbot-input]');
     const sendBtn = root.querySelector('[data-chatbot-send]');
     const messages = root.querySelector('[data-chatbot-messages]');
-    const suggestions = root.querySelector('[data-chatbot-suggestions]');
     const iconOpen = root.querySelector('[data-chatbot-icon-open]');
     const iconClose = root.querySelector('[data-chatbot-icon-close]');
     const badge = root.querySelector('[data-chatbot-badge]');
-    const dot = root.querySelector('[data-chatbot-dot]');
+    const ping = root.querySelector('[data-chatbot-ping]');
 
     const endpoint = root.dataset.chatbotUrl || '/chatbot';
+    const feedbackUrl = root.dataset.chatbotFeedbackUrl || '/chatbot/feedback';
+    const cartUrl = root.dataset.cartUrl || '/cart';
+    const pageProduct = root.dataset.pageProduct || null;
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
     const userId = root.dataset.userId || 'guest';
     const storeKey = `chatbot_history_u_${userId}`;
+    const seenKey = 'chatbot_seen_v1';
+    const mobile = window.matchMedia('(max-width: 639px)');
+    const finePointer = window.matchMedia('(pointer: fine)');
+
+    const storage = {
+        get(key) {
+            try { return localStorage.getItem(key); } catch { return null; }
+        },
+        set(key, value) {
+            try { localStorage.setItem(key, value); } catch { /* mode privat / penuh */ }
+        },
+        remove(key) {
+            try { localStorage.removeItem(key); } catch { /* abaikan */ }
+        },
+    };
 
     // Bersihkan riwayat lama yang tidak terisolasi
-    localStorage.removeItem('chatbot_history_v1');
+    storage.remove('chatbot_history_v1');
 
     // Setiap kali user logout, hapus riwayat chat sesi ini dari browser
-    document.querySelectorAll('form[action*="logout"]').forEach((form) => {
-        form.addEventListener('submit', () => {
-            localStorage.removeItem(storeKey);
-        });
+    document.querySelectorAll('form[action*="logout"]').forEach((logoutForm) => {
+        logoutForm.addEventListener('submit', () => storage.remove(storeKey));
     });
+
+    // Titik hijau berkedip hanya sampai chat pernah dibuka sekali
+    if (!storage.get(seenKey)) ping?.classList.remove('hidden');
 
     let busy = false;
 
     /* --- Buka / tutup panel --- */
+    const isOpen = () => root.classList.contains('is-open');
+
     const openPanel = () => {
-        panel.classList.remove('pointer-events-none', 'opacity-0', 'translate-y-4', 'translate-y-2');
-        panel.classList.add('pointer-events-auto', 'opacity-100', 'translate-y-0');
+        root.classList.add('is-open');
         iconOpen?.classList.add('hidden');
         iconClose?.classList.remove('hidden');
-        badge?.classList.add('hidden');
-        dot?.classList.add('hidden');
+        toggle?.setAttribute('aria-expanded', 'true');
         toggle?.setAttribute('aria-label', 'Tutup asisten chat');
-        input?.focus();
+        ping?.classList.add('hidden');
+        storage.set(seenKey, '1');
+        if (mobile.matches) document.body.style.overflow = 'hidden';
+        messages.scrollTop = messages.scrollHeight;
+        // Di layar sentuh, keyboard yang langsung muncul menutupi saran pertanyaan
+        if (finePointer.matches) input?.focus();
     };
+
     const closePanel = () => {
-        panel.classList.add('pointer-events-none', 'opacity-0', 'translate-y-4', 'translate-y-2');
-        panel.classList.remove('pointer-events-auto', 'opacity-100', 'translate-y-0');
+        root.classList.remove('is-open');
         iconOpen?.classList.remove('hidden');
         iconClose?.classList.add('hidden');
-        badge?.classList.remove('hidden');
-        dot?.classList.remove('hidden');
+        toggle?.setAttribute('aria-expanded', 'false');
         toggle?.setAttribute('aria-label', 'Buka asisten chat');
+        document.body.style.overflow = '';
+        hideConfirm();
     };
-    const isOpen = () => panel.classList.contains('opacity-100');
 
     toggle?.addEventListener('click', () => (isOpen() ? closePanel() : openPanel()));
     badge?.addEventListener('click', openPanel);
-    closeBtn?.addEventListener('click', closePanel);
-    clearBtn?.addEventListener('click', () => {
-        if (!confirm('Hapus riwayat percakapan?')) return;
-        localStorage.removeItem(storeKey);
-        // Sisakan pesan sambutan pertama
-        const welcome = messages.firstElementChild;
-        messages.innerHTML = '';
-        if (welcome) messages.appendChild(welcome);
+    closeBtn?.addEventListener('click', () => {
+        closePanel();
+        toggle?.focus();
     });
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && isOpen()) closePanel();
+        if (e.key === 'Escape' && isOpen()) {
+            closePanel();
+            toggle?.focus();
+        }
+    });
+
+    /* --- Hapus riwayat dengan konfirmasi di dalam panel --- */
+    const hideConfirm = () => {
+        if (confirmBar) confirmBar.hidden = true;
+    };
+    clearBtn?.addEventListener('click', () => {
+        if (!confirmBar) return;
+        confirmBar.hidden = !confirmBar.hidden;
+        if (!confirmBar.hidden) confirmBar.querySelector('[data-chatbot-confirm-ok]')?.focus();
+    });
+    confirmBar?.querySelector('[data-chatbot-confirm-cancel]')?.addEventListener('click', hideConfirm);
+    confirmBar?.querySelector('[data-chatbot-confirm-ok]')?.addEventListener('click', () => {
+        storage.remove(storeKey);
+        // Sisakan pesan sambutan pertama (beserta saran pertanyaannya)
+        const welcome = messages.querySelector('[data-chatbot-welcome]');
+        messages.innerHTML = '';
+        if (welcome) messages.appendChild(welcome);
+        hideConfirm();
+        input?.focus();
     });
 
     /* --- Riwayat disimpan lokal di browser (tidak boros token/DB) --- */
     const loadHistory = () => {
         try {
-            return JSON.parse(localStorage.getItem(storeKey) || '[]');
+            return JSON.parse(storage.get(storeKey) || '[]');
         } catch {
             return [];
         }
     };
     const saveHistory = (history) => {
         // Batasi 20 pesan terakhir agar tidak menumpuk.
-        localStorage.setItem(storeKey, JSON.stringify(history.slice(-20)));
+        storage.set(storeKey, JSON.stringify(history.slice(-20)));
     };
 
     /* --- Render pesan --- */
     const escapeHtml = (text) =>
-        text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        String(text ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // Tautan hanya boleh ke halaman toko sendiri
+    const safeHref = (raw) => {
+        const href = raw.replace(/&amp;/g, '&');
+        try {
+            const url = new URL(href, window.location.origin);
+            if (url.origin !== window.location.origin) return null;
+            return url.pathname + url.search + url.hash;
+        } catch {
+            return null;
+        }
+    };
+
+    const formatInline = (line) =>
+        line
+            .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-ink-900">$1</strong>')
+            .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label, href) => {
+                const safe = safeHref(href);
+                return safe
+                    ? `<a href="${escapeHtml(safe)}" class="font-semibold text-brand-700 underline decoration-brand-300 underline-offset-2 hover:decoration-brand-600">${label}</a>`
+                    : label;
+            });
+
+    const renderTable = (rows) => {
+        let html = '<div class="my-2 overflow-x-auto rounded-xl border border-ink-200 bg-ink-50/70 p-2 text-xs"><table class="w-full text-left"><tbody>';
+        rows.forEach((row, ri) => {
+            html += `<tr class="${ri === 0 ? 'font-bold border-b border-ink-200 text-ink-900' : 'border-b border-ink-100/60'}">`;
+            row.forEach((cell) => { html += `<td class="p-1.5 align-top">${cell}</td>`; });
+            html += '</tr>';
+        });
+        return `${html}</tbody></table></div>`;
+    };
 
     const formatText = (text) => {
-        let clean = escapeHtml(text)
-            .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-ink-900">$1</strong>');
-
-        // Deteksi dan rapikan baris markdown table (fallback jika AI tetap membuat tabel)
-        const lines = clean.split('\n');
+        const lines = formatInline(escapeHtml(text)).split('\n');
         const formatted = [];
-        let inTable = false;
         let tableRows = [];
 
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (line.startsWith('|') && line.endsWith('|')) {
-                // Abaikan baris separator |---|---|
-                if (/^\|[\s\-:]+\|\s*$/.test(line)) continue;
-                inTable = true;
-                const cells = line.split('|').slice(1, -1).map((c) => c.trim());
-                tableRows.push(cells);
-            } else {
-                if (inTable && tableRows.length) {
-                    // Render tabel sebagai card responsif yang bersih
-                    let html = '<div class="my-2 overflow-x-auto rounded-xl border border-ink-200 bg-ink-50/70 p-2 text-xs"><table class="w-full text-left"><tbody>';
-                    tableRows.forEach((row, ri) => {
-                        html += `<tr class="${ri === 0 ? 'font-bold border-b border-ink-200 text-ink-900' : 'border-b border-ink-100/60'}">`;
-                        row.forEach((cell) => { html += `<td class="p-1.5 align-top">${cell}</td>`; });
-                        html += '</tr>';
-                    });
-                    html += '</tbody></table></div>';
-                    formatted.push(html);
-                    tableRows = [];
-                    inTable = false;
-                }
-                if (line.startsWith('- ')) {
-                    formatted.push(`<li class="ml-4 list-disc text-ink-700">${line.slice(2)}</li>`);
-                } else if (/^\d+\.\s/.test(line)) {
-                    formatted.push(`<p class="mt-2 font-bold text-ink-900">${line}</p>`);
-                } else if (line) {
-                    formatted.push(`<p class="mt-1">${line}</p>`);
-                }
-            }
-        }
+        const flushTable = () => {
+            if (tableRows.length) formatted.push(renderTable(tableRows));
+            tableRows = [];
+        };
 
-        if (inTable && tableRows.length) {
-            let html = '<div class="my-2 overflow-x-auto rounded-xl border border-ink-200 bg-ink-50/70 p-2 text-xs"><table class="w-full text-left"><tbody>';
-            tableRows.forEach((row, ri) => {
-                html += `<tr class="${ri === 0 ? 'font-bold border-b border-ink-200 text-ink-900' : 'border-b border-ink-100/60'}">`;
-                row.forEach((cell) => { html += `<td class="p-1.5 align-top">${cell}</td>`; });
-                html += '</tr>';
-            });
-            html += '</tbody></table></div>';
-            formatted.push(html);
-        }
+        lines.forEach((raw) => {
+            const line = raw.trim();
+            // Fallback bila AI tetap membuat tabel markdown
+            if (line.startsWith('|') && line.endsWith('|')) {
+                if (!/^\|[\s\-:|]+\|$/.test(line)) {
+                    tableRows.push(line.split('|').slice(1, -1).map((c) => c.trim()));
+                }
+                return;
+            }
+            flushTable();
+            if (line.startsWith('- ')) {
+                formatted.push(`<li class="ml-4 list-disc text-ink-700">${line.slice(2)}</li>`);
+            } else if (/^\d+\.\s/.test(line)) {
+                formatted.push(`<p class="mt-2 font-bold text-ink-900">${line}</p>`);
+            } else if (line) {
+                formatted.push(`<p class="mt-1 first:mt-0">${line}</p>`);
+            }
+        });
+        flushTable();
 
         return formatted.join('');
     };
 
-    const bubble = (text, who) => {
-        const wrap = document.createElement('div');
-        wrap.className = 'flex gap-2';
-
-        const now = new Date();
-        const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        if (who === 'user') {
-            wrap.className += ' justify-end';
-            wrap.innerHTML =
-                `<div class="flex flex-col items-end max-w-[85%]">` +
-                `<div class="rounded-2xl rounded-tr-sm bg-brand-600 px-3.5 py-2 text-white shadow-sm text-sm leading-relaxed">${formatText(text)}</div>` +
-                `<span class="mt-1 text-[10px] text-ink-400">${time}</span>` +
-                `</div>`;
-        } else {
-            wrap.innerHTML =
-                `<span class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-100 text-brand-700 shadow-xs"><svg class="h-4 w-4"><use href="#i-headset"/></svg></span>` +
-                `<div class="flex flex-col max-w-[85%]">` +
-                `<div class="rounded-2xl rounded-tl-sm border border-ink-100 bg-white px-3.5 py-2.5 text-ink-700 shadow-sm leading-relaxed">${formatText(text)}</div>` +
-                `<span class="mt-1 text-[10px] text-ink-400">Asisten &bull; ${time}</span>` +
-                `</div>`;
-        }
-
-        messages.appendChild(wrap);
-        messages.scrollTop = messages.scrollHeight;
-        return wrap;
+    const nearBottom = () => messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
+    const scrollToEnd = (force = false) => {
+        if (force || nearBottom()) messages.scrollTop = messages.scrollHeight;
     };
 
-    const loading = () => {
+    const timeLabel = (ts) =>
+        new Date(ts || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const botAvatar =
+        '<span class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ink-900 text-white">' +
+        '<svg class="h-4 w-4" aria-hidden="true"><use href="#i-headset"/></svg></span>';
+
+    const userBubble = (text, ts) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex justify-end gap-2';
+        wrap.innerHTML =
+            '<div class="flex max-w-[85%] flex-col items-end">' +
+            `<div class="rounded-2xl rounded-tr-md bg-brand-600 px-3.5 py-2 text-sm leading-relaxed break-words text-white">${formatText(text)}</div>` +
+            `<span class="mt-1 text-[10px] text-ink-400">${timeLabel(ts)}</span>` +
+            '</div>';
+        messages.appendChild(wrap);
+        scrollToEnd(true);
+    };
+
+    const botBubble = (ts) => {
         const wrap = document.createElement('div');
         wrap.className = 'flex gap-2';
         wrap.innerHTML =
-            `<span class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-100 text-brand-700"><svg class="h-4 w-4"><use href="#i-headset"/></svg></span>` +
-            `<div class="rounded-2xl rounded-tl-sm border border-ink-100 bg-white px-3 py-2 text-ink-400 shadow-sm">Sedang mengetik…</div>`;
+            botAvatar +
+            '<div class="flex min-w-0 max-w-[85%] flex-col">' +
+            '<div data-content class="rounded-2xl rounded-tl-md bg-ink-50 px-3.5 py-2.5 leading-relaxed break-words text-ink-800"></div>' +
+            '<div data-extras></div>' +
+            `<span data-meta class="mt-1 text-[10px] text-ink-400">Asisten &bull; ${timeLabel(ts)}</span>` +
+            '</div>';
         messages.appendChild(wrap);
-        messages.scrollTop = messages.scrollHeight;
+        return {
+            wrap,
+            content: wrap.querySelector('[data-content]'),
+            extras: wrap.querySelector('[data-extras]'),
+            meta: wrap.querySelector('[data-meta]'),
+        };
+    };
+
+    const typingIndicator = () => {
+        const wrap = document.createElement('div');
+        wrap.className = 'flex gap-2';
+        wrap.setAttribute('aria-label', 'Asisten sedang mengetik');
+        wrap.innerHTML =
+            botAvatar +
+            '<div class="chatbot-typing flex items-center gap-1 rounded-2xl rounded-tl-md bg-ink-50 px-3.5 py-3">' +
+            '<span></span><span></span><span></span></div>';
+        messages.appendChild(wrap);
+        scrollToEnd(true);
         return wrap;
     };
 
+    /* --- Kartu produk di bawah jawaban --- */
+    const productCards = (products) => {
+        if (!products?.length) return '';
+        const cards = products.map((p) => {
+            const name = escapeHtml(p.name);
+            const url = escapeHtml(safeHref(p.url) || '#');
+            const initials = escapeHtml(String(p.name).trim().slice(0, 2).toUpperCase());
+            const image = p.image_url
+                ? `<img src="${escapeHtml(p.image_url)}" alt="" loading="lazy" class="relative h-full w-full object-contain p-1 mix-blend-multiply" onerror="this.remove()">`
+                : '';
+            const compare = p.compare_at_price
+                ? `<span class="text-[10px] text-ink-400 line-through">${escapeHtml(p.compare_at_price)}</span>` +
+                  `<span class="rounded bg-danger-500/10 px-1 text-[10px] font-bold text-danger-600">-${Number(p.discount_percent)}%</span>`
+                : '';
+            const action = p.in_stock
+                ? `<form method="POST" action="${escapeHtml(cartUrl)}" class="shrink-0">` +
+                  `<input type="hidden" name="_token" value="${escapeHtml(csrf)}">` +
+                  `<input type="hidden" name="product_id" value="${Number(p.id)}">` +
+                  '<input type="hidden" name="quantity" value="1">' +
+                  `<button type="submit" class="grid h-8 w-8 place-items-center rounded-full bg-ink-900 text-white hover:bg-ink-700" aria-label="Tambah ${name} ke keranjang" title="Tambah ke keranjang">` +
+                  '<svg class="h-4 w-4" aria-hidden="true"><use href="#i-cart"/></svg></button></form>'
+                : '<span class="shrink-0 rounded-md bg-ink-100 px-1.5 py-1 text-[10px] font-semibold text-ink-500">Stok habis</span>';
+
+            return (
+                '<div class="flex items-center gap-2.5 rounded-2xl border border-ink-100 bg-white p-2">' +
+                `<a href="${url}" class="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-ink-50 text-xs font-semibold text-ink-400" tabindex="-1" aria-hidden="true">` +
+                `<span class="absolute">${initials}</span>${image}</a>` +
+                '<div class="min-w-0 flex-1">' +
+                `<a href="${url}" class="line-clamp-2 text-xs font-semibold leading-snug text-ink-900 hover:text-brand-700">${name}</a>` +
+                `<div class="mt-0.5 flex flex-wrap items-center gap-x-1.5 tabular-nums"><span class="text-xs font-extrabold text-ink-900">${escapeHtml(p.price)}</span>${compare}</div>` +
+                '</div>' +
+                action +
+                '</div>'
+            );
+        });
+        return `<div class="mt-2 space-y-1.5">${cards.join('')}</div>`;
+    };
+
+    /* --- Tombol penilaian 👍 / 👎 --- */
+    const feedbackRow = (entry) => {
+        const row = document.createElement('div');
+        row.className = 'mt-1.5 flex items-center gap-1 text-[11px] text-ink-400';
+
+        const render = () => {
+            if (entry.rating) {
+                row.innerHTML = `<span>${entry.rating > 0 ? '👍' : '👎'} Terima kasih atas penilaiannya!</span>`;
+                return;
+            }
+            row.innerHTML =
+                '<span class="mr-1">Membantu?</span>' +
+                '<button type="button" data-rate="1" class="rounded-md px-1.5 py-0.5 text-sm hover:bg-ink-100" aria-label="Jawaban membantu">👍</button>' +
+                '<button type="button" data-rate="-1" class="rounded-md px-1.5 py-0.5 text-sm hover:bg-ink-100" aria-label="Jawaban tidak membantu">👎</button>';
+            row.querySelectorAll('[data-rate]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const rating = Number(btn.dataset.rate);
+                    row.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+                    try {
+                        const res = await fetch(feedbackUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Accept: 'application/json',
+                                'X-CSRF-TOKEN': csrf,
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: JSON.stringify({
+                                rating,
+                                question: entry.question || '-',
+                                answer: entry.text,
+                                message_id: entry.messageId || null,
+                            }),
+                        });
+                        if (!res.ok) throw new Error();
+                        entry.rating = rating;
+                        const history = loadHistory();
+                        const saved = history.find((m) => m.ts === entry.ts && m.who === 'bot');
+                        if (saved) saved.rating = rating;
+                        saveHistory(history);
+                        render();
+                    } catch {
+                        row.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+                        showToast('Penilaian gagal dikirim. Coba lagi ya.', 'error');
+                    }
+                });
+            });
+        };
+
+        render();
+        return row;
+    };
+
+    const finishBot = (bubbleEls, entry) => {
+        bubbleEls.content.classList.remove('chatbot-streaming');
+        bubbleEls.content.innerHTML = formatText(entry.text);
+        bubbleEls.extras.innerHTML = productCards(entry.products);
+        if (!entry.blocked && entry.question) bubbleEls.meta.after(feedbackRow(entry));
+    };
+
     /* --- Pulihkan riwayat --- */
-    loadHistory().forEach((m) => bubble(m.text, m.who));
+    loadHistory().forEach((m) => {
+        if (m.who === 'user') {
+            userBubble(m.text, m.ts);
+        } else {
+            finishBot(botBubble(m.ts), m);
+        }
+    });
+
+    /* --- Baca jawaban bertahap (NDJSON) --- */
+    const readStream = async (res, onEvent) => {
+        if (!res.body?.getReader) {
+            const data = await res.json();
+            onEvent({ type: 'done', ...data });
+            return;
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        for (;;) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let newline;
+            while ((newline = buffer.indexOf('\n')) >= 0) {
+                const line = buffer.slice(0, newline).trim();
+                buffer = buffer.slice(newline + 1);
+                if (line) onEvent(JSON.parse(line));
+            }
+        }
+        if (buffer.trim()) onEvent(JSON.parse(buffer));
+    };
 
     /* --- Kirim pertanyaan --- */
     const send = async (question) => {
         const text = (question ?? input.value).trim();
-        if (!text || busy) return;
+        if (text.length < 2 || busy) return;
 
         busy = true;
         sendBtn.disabled = true;
         if (!question) input.value = '';
         input.style.height = 'auto';
+        hideConfirm();
 
         const history = loadHistory();
         const conversation = history.slice(-8).map((m) => ({
             role: m.who === 'user' ? 'user' : 'assistant',
-            content: m.text,
+            content: String(m.text).slice(0, 1000),
         }));
 
-        history.push({ who: 'user', text });
+        const userEntry = { who: 'user', text, ts: Date.now() };
+        history.push(userEntry);
         saveHistory(history);
-        bubble(text, 'user');
+        userBubble(text, userEntry.ts);
 
-        const loader = loading();
+        let typing = typingIndicator();
+        let bubbleEls = null;
+        let answer = '';
+        let frame = 0;
+        const entry = { who: 'bot', text: '', question: text, ts: Date.now() };
+
+        const paint = () => {
+            frame = 0;
+            bubbleEls.content.innerHTML = formatText(answer);
+            scrollToEnd();
+        };
+
+        const showError = (message) => {
+            typing?.remove();
+            typing = null;
+            const els = bubbleEls || botBubble();
+            els.content.classList.remove('chatbot-streaming');
+            els.content.innerHTML = formatText(message);
+        };
 
         try {
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Accept: 'application/json',
+                    Accept: 'application/x-ndjson',
                     'X-CSRF-TOKEN': csrf,
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({ question: text, history: conversation }),
+                body: JSON.stringify({ question: text, history: conversation, product: pageProduct }),
             });
 
-            const data = await res.json().catch(() => ({}));
-
-            loader.remove();
-
-            if (!res.ok || data.error) {
-                bubble(data.error || 'Maaf, terjadi kesalahan. Coba lagi ya.', 'bot');
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                const message = res.status === 429
+                    ? 'Pertanyaanmu banyak sekali 😅 Tunggu sebentar lalu coba lagi ya.'
+                    : data.error || data.message || 'Maaf, terjadi kesalahan. Coba lagi ya.';
+                showError(message);
                 return;
             }
 
-            bubble(data.answer, 'bot');
-            playChime('info');
-            const h2 = loadHistory();
-            h2.push({ who: 'bot', text: data.answer });
-            saveHistory(h2);
+            let finished = false;
+            await readStream(res, (event) => {
+                if (event.type === 'delta') {
+                    if (!bubbleEls) {
+                        typing?.remove();
+                        typing = null;
+                        bubbleEls = botBubble(entry.ts);
+                        bubbleEls.content.classList.add('chatbot-streaming');
+                    }
+                    answer += event.text;
+                    if (!frame) frame = requestAnimationFrame(paint);
+                } else if (event.type === 'done') {
+                    finished = true;
+                    if (frame) cancelAnimationFrame(frame);
+                    typing?.remove();
+                    typing = null;
+                    bubbleEls = bubbleEls || botBubble(entry.ts);
+                    Object.assign(entry, {
+                        text: event.answer || answer,
+                        products: event.products || [],
+                        messageId: event.message_id || null,
+                        blocked: Boolean(event.blocked),
+                    });
+                    finishBot(bubbleEls, entry);
+                    scrollToEnd();
+                    playChime('info');
+                    const h2 = loadHistory();
+                    h2.push(entry);
+                    saveHistory(h2);
+                } else if (event.type === 'error') {
+                    finished = true;
+                    showError(event.error || 'Maaf, terjadi kesalahan. Coba lagi ya.');
+                }
+            });
+
+            if (!finished) showError('Koneksi terputus sebelum jawaban selesai. Coba kirim ulang ya.');
         } catch {
-            loader.remove();
-            bubble('Koneksi bermasalah. Periksa internetmu lalu coba lagi.', 'bot');
+            showError('Koneksi bermasalah. Periksa internetmu lalu coba lagi.');
         } finally {
+            typing?.remove();
             busy = false;
             sendBtn.disabled = false;
-            input.focus();
+            if (finePointer.matches) input.focus();
         }
     };
 
@@ -577,7 +930,7 @@ function initChatbot() {
 
     /* --- Enter kirim, Shift+Enter baris baru --- */
     input?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
             e.preventDefault();
             send();
         }
@@ -590,7 +943,7 @@ function initChatbot() {
     });
 
     /* --- Saran cepat --- */
-    suggestions?.querySelectorAll('[data-chatbot-suggest]').forEach((btn) => {
+    messages.querySelectorAll('[data-chatbot-suggest]').forEach((btn) => {
         btn.addEventListener('click', () => send(btn.dataset.chatbotSuggest));
     });
 }

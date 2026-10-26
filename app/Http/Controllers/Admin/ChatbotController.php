@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\ChatbotFeedback;
 use App\Models\ChatbotMessage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,8 +25,9 @@ class ChatbotController extends Controller
             ->withQueryString();
 
         $stats = $this->stats();
+        $feedback = $this->feedbackStats();
 
-        return view('admin.chatbot.index', compact('messages', 'stats', 'search'));
+        return view('admin.chatbot.index', compact('messages', 'stats', 'search', 'feedback'));
     }
 
     public function destroy(Request $request, ChatbotMessage $chatbotMessage): RedirectResponse
@@ -48,6 +50,29 @@ class ChatbotController extends Controller
         ]);
 
         return back()->with('success', "Semua cache chatbot ({$deleted} entri) dibersihkan.");
+    }
+
+    /**
+     * Ringkasan penilaian 👍/👎 dari pengguna widget chatbot.
+     */
+    private function feedbackStats(): array
+    {
+        $helpful = ChatbotFeedback::query()->where('rating', 1)->count();
+        $unhelpful = ChatbotFeedback::query()->where('rating', -1)->count();
+        $total = $helpful + $unhelpful;
+
+        return [
+            'helpful' => $helpful,
+            'unhelpful' => $unhelpful,
+            'total' => $total,
+            'satisfaction' => $total > 0 ? round($helpful / $total * 100, 1) : null,
+            'recent_unhelpful' => ChatbotFeedback::query()
+                ->with('user')
+                ->where('rating', -1)
+                ->latest()
+                ->limit(5)
+                ->get(),
+        ];
     }
 
     /**

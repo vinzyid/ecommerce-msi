@@ -41,7 +41,7 @@
                             <a href="{{ route('admin.orders.show', $order) }}" class="font-semibold text-brand-600 hover:text-brand-700">{{ $order->order_number }}</a>
                         </td>
                         <td class="px-5 py-3.5 font-medium text-ink-700">{{ $order->user->username }}</td>
-                        <td class="px-5 py-3.5 text-ink-500">{{ $order->ordered_at->format('d M Y, H:i') }}</td>
+                        <td class="px-5 py-3.5 text-ink-500">{{ $order->ordered_at->translatedFormat('d M Y, H:i') }}</td>
                         <td class="px-5 py-3.5 text-center font-bold text-ink-700">{{ $order->items_count }}</td>
                         <td class="px-5 py-3.5 text-right font-bold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</td>
                         <td class="px-5 py-3.5"><x-status-badge :status="$order->status" /></td>

@@ -7,7 +7,7 @@
     <header class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <span class="text-xs font-bold uppercase tracking-wide text-brand-600">Belanja / Keranjang</span>
-            <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">Keranjang Belanja</h1>
+            <h1 class="mt-1 text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl">Keranjang Belanja</h1>
             <p class="mt-1 text-sm text-ink-500">Periksa kembali produk yang ingin kamu beli.</p>
         </div>
         @if ($cartItems->isNotEmpty())
@@ -36,7 +36,7 @@
             </span>
             <h2 class="mt-4 text-lg font-bold text-ink-900">Keranjang masih kosong</h2>
             <p class="mt-1 text-sm text-ink-500">Pilih produk dari katalog untuk mulai membuat pesanan.</p>
-            <a href="{{ route('home') }}" class="mt-5 inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-700">Buka katalog</a>
+            <a href="{{ route('home') }}" class="mt-5 inline-block rounded-full bg-ink-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-ink-700">Buka katalog</a>
         </div>
     @else
         {{-- Progress Bebas Ongkir (Tokopedia Style) --}}
@@ -53,10 +53,10 @@
                     </span>
                     <div class="min-w-0 flex-1">
                         <p class="text-sm font-semibold text-ink-800">
-                            Tambah <b class="font-extrabold text-emerald-600">Rp{{ number_format($remaining, 0, ',', '.') }}</b> lagi untuk <b>Bebas Ongkir</b>!
+                            Tambah <b class="font-semibold text-emerald-600">Rp{{ number_format($remaining, 0, ',', '.') }}</b> lagi untuk <b>Bebas Ongkir</b>!
                         </p>
                         <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink-100">
-                            <div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-500" style="width: {{ $progressPercent }}%"></div>
+                            <div class="h-full rounded-full bg-success-500 transition-all duration-500" style="width: {{ $progressPercent }}%"></div>
                         </div>
                     </div>
                 </div>
@@ -81,11 +81,10 @@
                             <input type="checkbox" data-select-all checked
                                    class="h-4.5 w-4.5 rounded border-ink-300 accent-brand-600">
                         </label>
-                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-800 text-[11px] font-black text-white">VP</span>
+                        <x-logo :wordmark="false" />
                         <div class="leading-tight">
                             <div class="flex items-center gap-1.5">
                                 <h2 class="text-sm font-bold text-ink-900">VinzyPlay Official Store</h2>
-                                <svg class="h-3.5 w-3.5 text-purple-700"><use href="#i-badge-check"/></svg>
                             </div>
                             <p class="flex items-center gap-1 text-[11px] text-ink-500">
                                 <svg class="h-3 w-3 text-brand-600"><use href="#i-map-pin"/></svg>
@@ -112,7 +111,7 @@
                             @if ($item->product->image_url)
                                 <img src="{{ $item->product->image_url }}" alt="" loading="lazy" class="h-full w-full object-cover">
                             @else
-                                <span class="flex h-full w-full items-center justify-center bg-ink-900 text-sm font-black text-white/80">
+                                <span class="flex h-full w-full items-center justify-center bg-ink-900 text-sm font-semibold text-white/80">
                                     {{ strtoupper(substr($item->product->category->name, 0, 2)) }}
                                 </span>
                             @endif
@@ -139,7 +138,7 @@
                             </div>
 
                             <div class="mt-1.5">
-                                <span class="text-base font-extrabold text-ink-900">Rp{{ number_format($item->product->price, 0, ',', '.') }}</span>
+                                <span class="text-base font-semibold text-ink-900">Rp{{ number_format($item->product->price, 0, ',', '.') }}</span>
                                 @if ($item->product->hasDiscount())
                                     <del class="ml-1.5 text-xs text-ink-400">Rp{{ number_format($item->product->compare_at_price, 0, ',', '.') }}</del>
                                 @endif
@@ -170,7 +169,7 @@
 
                                 <div class="text-right">
                                     <div class="text-[10px] text-ink-400">Subtotal</div>
-                                    <div class="text-sm font-extrabold text-ink-900">Rp{{ number_format((int) $item->product->price * $item->quantity, 0, ',', '.') }}</div>
+                                    <div class="text-sm font-semibold text-ink-900">Rp{{ number_format((int) $item->product->price * $item->quantity, 0, ',', '.') }}</div>
                                 </div>
                             </div>
 
@@ -186,7 +185,7 @@
 
             <aside class="h-fit lg:sticky lg:top-32">
                 <div class="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
-                    <h2 class="text-base font-extrabold text-ink-900">Ringkasan Belanja</h2>
+                    <h2 class="text-base font-semibold text-ink-900">Ringkasan Belanja</h2>
 
                     <dl class="mt-4 space-y-2.5 text-sm">
                         <div class="flex justify-between">
@@ -241,13 +240,13 @@
                             <span class="text-sm font-semibold text-ink-600">Total</span>
                             <p class="text-[11px] text-ink-400" data-selected-count-label>{{ $cartItems->count() }} barang dipilih</p>
                         </div>
-                        <strong class="text-xl font-extrabold text-ink-900" data-cart-total>Rp{{ number_format($total, 0, ',', '.') }}</strong>
+                        <strong class="text-xl font-semibold text-ink-900" data-cart-total>Rp{{ number_format($total, 0, ',', '.') }}</strong>
                     </div>
 
                     <form id="checkout-form" method="GET" action="{{ route('checkout.create') }}">
                         <input type="hidden" name="items" id="selected-items-input" value="{{ $cartItems->pluck('id')->implode(',') }}">
                         <button type="submit" id="checkout-btn"
-                                class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-brand-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
+                                class="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-ink-900 px-5 py-3.5 text-sm font-medium text-white transition hover:bg-ink-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
                             Lanjut ke checkout (<span data-selected-count>{{ $cartItems->count() }}</span>)
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-arrow-right"/></svg>
                         </button>

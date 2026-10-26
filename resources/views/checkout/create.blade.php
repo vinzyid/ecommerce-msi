@@ -11,7 +11,7 @@
 <div class="container-page pt-6">
     <header>
         <span class="text-xs font-bold uppercase tracking-wide text-brand-600">Belanja / Checkout</span>
-        <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">Checkout</h1>
+        <h1 class="mt-1 text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl">Checkout</h1>
         <p class="mt-1 text-sm text-ink-500">Lengkapi alamat, pilih pengiriman, lalu tentukan pembayaran.</p>
     </header>
 
@@ -19,7 +19,7 @@
     <ol class="mt-5 flex flex-wrap items-center gap-2 text-xs font-semibold sm:gap-3" aria-label="Langkah checkout">
         @foreach (['Alamat', 'Pengiriman', 'Pembayaran', 'Konfirmasi'] as $i => $step)
             <li class="flex items-center gap-2 {{ $i === 0 ? 'text-brand-700' : 'text-ink-400' }}">
-                <span class="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold {{ $i === 0 ? 'bg-brand-600 text-white' : 'bg-ink-100 text-ink-500' }}">{{ $i + 1 }}</span>
+                <span class="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-medium {{ $i === 0 ? 'bg-ink-900 text-white' : 'bg-ink-100 text-ink-500' }}">{{ $i + 1 }}</span>
                 <span>{{ $step }}</span>
             </li>
             @if ($i < 3)
@@ -52,7 +52,7 @@
                 <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700">01</span>
-                        <h2 class="text-base font-extrabold text-ink-900">Alamat Pengiriman</h2>
+                        <h2 class="text-base font-semibold text-ink-900">Alamat Pengiriman</h2>
                     </div>
                     @if (isset($savedAddresses) && $savedAddresses->isNotEmpty())
                         <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
@@ -85,7 +85,7 @@
                                             <span class="text-xs font-bold text-ink-900">{{ $addr->label }}</span>
                                         </div>
                                         @if ($addr->is_default)
-                                            <span class="rounded bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold text-white">Utama</span>
+                                            <span class="rounded bg-ink-900 px-1.5 py-0.5 text-[10px] font-medium text-white">Utama</span>
                                         @endif
                                     </div>
                                     <p class="mt-2 text-xs font-bold text-ink-800">{{ $addr->recipient_name }} &bull; <span class="font-normal text-ink-500">{{ $addr->phone }}</span></p>
@@ -144,7 +144,7 @@
                 <div class="mb-5 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700">02</span>
-                        <h2 class="text-base font-extrabold text-ink-900">Metode Pengiriman</h2>
+                        <h2 class="text-base font-semibold text-ink-900">Metode Pengiriman</h2>
                     </div>
                     <span class="text-xs font-semibold text-emerald-600">Bebas Ongkir min. Rp300rb</span>
                 </div>
@@ -183,7 +183,7 @@
                 <div class="mb-5 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700">03</span>
-                        <h2 class="text-base font-extrabold text-ink-900">Metode Pembayaran</h2>
+                        <h2 class="text-base font-semibold text-ink-900">Metode Pembayaran</h2>
                     </div>
                     <span class="flex items-center gap-1 text-xs text-ink-500 font-medium">
                         <svg class="h-3.5 w-3.5 text-emerald-600"><use href="#i-shield"/></svg>
@@ -235,7 +235,7 @@
         {{-- Ringkasan --}}
         <aside class="h-fit lg:sticky lg:top-32">
             <div class="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
-                <h2 class="text-base font-extrabold text-ink-900">Ringkasan Pesanan</h2>
+                <h2 class="text-base font-semibold text-ink-900">Ringkasan Pesanan</h2>
 
                 <ul class="mt-4 max-h-56 space-y-3 overflow-y-auto pr-1">
                     @foreach ($cartItems as $item)
@@ -275,11 +275,11 @@
 
                 <div class="mt-4 flex items-end justify-between border-t border-ink-100 pt-4">
                     <span class="text-sm font-semibold text-ink-600">Total</span>
-                    <strong class="text-xl font-extrabold text-ink-900">Rp{{ number_format($total, 0, ',', '.') }}</strong>
+                    <strong class="text-xl font-semibold text-ink-900">Rp{{ number_format($total, 0, ',', '.') }}</strong>
                 </div>
 
                 <button type="submit"
-                        class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-brand-700 active:scale-[0.99] shadow-md">
+                        class="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-ink-900 px-5 py-3.5 text-sm font-medium text-white transition hover:bg-ink-700 active:scale-[0.99] shadow-md">
                     <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check-circle"/></svg>
                     Bayar &amp; Buat Pesanan
                 </button>

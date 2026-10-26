@@ -11,7 +11,7 @@
     <header class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <span class="text-xs font-bold uppercase tracking-wide text-brand-600">Akun / Wishlist</span>
-            <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">Wishlist</h1>
+            <h1 class="mt-1 text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl">Wishlist</h1>
             <p class="mt-1 text-sm text-ink-500">{{ $wishlists->total() }} produk tersimpan.</p>
         </div>
         @if ($wishlists->isNotEmpty())
@@ -34,7 +34,7 @@
             </span>
             <h2 class="mt-4 text-lg font-bold text-ink-900">Wishlist masih kosong</h2>
             <p class="mt-1 text-sm text-ink-500">Simpan produk favoritmu dengan menekan ikon hati di kartu produk.</p>
-            <a href="{{ route('home') }}" class="mt-5 inline-block rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-700">Buka katalog</a>
+            <a href="{{ route('home') }}" class="mt-5 inline-block rounded-full bg-ink-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-ink-700">Buka katalog</a>
         </div>
     @else
         <div class="mt-6 grid grid-cols-2 gap-3.5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

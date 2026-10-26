@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\ChatbotMessage;
 use App\Models\Product;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -18,18 +20,24 @@ class ChatbotService
      *  2. Kalau ada & belum kedaluwarsa -> pakai jawaban tersimpan (hemat token).
      *  3. Kalau tidak -> panggil AI dengan konteks produk terkini -> simpan ke cache.
      *
-     * @return array{answer: string, cached: bool}
+     * Bila $onDelta diberikan, jawaban dikirim bertahap (streaming) lewat callback itu.
+     *
+     * @param  (callable(string): void)|null  $onDelta
+     * @return array{answer: string, cached: bool, blocked: bool, message_id: int|null, products: Collection<int, Product>}
      */
-    public function ask(string $question, ?int $userId = null, array $history = []): array
-    {
+    public function ask(
+        string $question,
+        ?int $userId = null,
+        array $history = [],
+        ?Product $pageProduct = null,
+        ?callable $onDelta = null,
+    ): array {
         // Guard: tolak pertanyaan yang jelas di luar konteks toko sebelum memanggil AI.
         $rejection = $this->rejectOffTopic($question);
         if ($rejection !== null) {
-            return [
-                'answer' => $rejection,
-                'cached' => false,
-                'blocked' => true,
-            ];
+            $onDelta && $onDelta($rejection);
+
+            return $this->result($rejection, blocked: true);
         }
 
         // Bersihkan history: batasi 8 pesan terakhir & hanya role/content yang valid.
@@ -49,12 +57,16 @@ class ChatbotService
         // tanpa konteks, agar AI tidak salah menjawab "produk apa yang ingin dibandingkan?".
         $isFollowUp = ! empty($conversation) && $this->isContextualFollowUp($question);
 
+        // "Produk ini masih ada?" dari halaman produk A tidak boleh dijawab dari cache produk B.
+        $usesPageContext = $pageProduct !== null && $this->isContextualFollowUp($question);
+        $skipCache = $isFollowUp || $usesPageContext;
+
         $hash = ChatbotMessage::hashQuestion($question);
         $canonical = ChatbotMessage::canonicalKey($question);
 
         $cached = null;
 
-        if (! $isFollowUp) {
+        if (! $skipCache) {
             // 1. Cek exact hash
             $cached = ChatbotMessage::query()
                 ->where('question_hash', $hash)
@@ -77,17 +89,21 @@ class ChatbotService
 
         if ($cached && $cached->isFresh()) {
             $cached->increment('hit_count');
+            $onDelta && $onDelta($cached->answer);
 
-            return [
-                'answer' => $cached->answer,
-                'cached' => true,
-            ];
+            return $this->result($cached->answer, cached: true, messageId: $cached->id);
         }
 
-        $answer = $this->askAi($question, $conversation);
+        $messages = $this->buildMessages($question, $conversation, $pageProduct);
+        $answer = $onDelta ? $this->streamAi($messages, $onDelta) : $this->askAi($messages);
+
+        // Jawaban yang bergantung konteks percakapan/halaman tidak disimpan ke cache bersama.
+        if ($skipCache) {
+            return $this->result($answer);
+        }
 
         // Simpan / perbarui cache jawaban.
-        ChatbotMessage::query()->updateOrCreate(
+        $entry = ChatbotMessage::query()->updateOrCreate(
             ['question_hash' => $hash],
             [
                 'user_id' => $userId,
@@ -100,10 +116,66 @@ class ChatbotService
             ]
         );
 
+        return $this->result($answer, messageId: $entry->id);
+    }
+
+    private function result(string $answer, bool $cached = false, bool $blocked = false, ?int $messageId = null): array
+    {
         return [
             'answer' => $answer,
-            'cached' => false,
+            'cached' => $cached,
+            'blocked' => $blocked,
+            'message_id' => $messageId,
+            'products' => $blocked ? collect() : $this->mentionedProducts($answer),
         ];
+    }
+
+    /**
+     * Produk yang disebut di jawaban (urut sesuai kemunculan), untuk ditampilkan
+     * sebagai kartu produk di bawah balasan chatbot.
+     *
+     * @return Collection<int, Product>
+     */
+    public function mentionedProducts(string $answer, int $limit = 3): Collection
+    {
+        $haystack = $this->normalizeForMatch($answer);
+        $selected = collect();
+
+        Product::query()
+            ->where('is_active', true)
+            ->whereHas('category', fn ($q) => $q->where('is_active', true))
+            ->get(['id', 'category_id', 'name', 'slug', 'price', 'compare_at_price', 'stock', 'image_url'])
+            ->map(function (Product $product) use ($haystack) {
+                $needle = $this->normalizeForMatch($product->name);
+
+                return [
+                    'product' => $product,
+                    'needle' => $needle,
+                    'position' => mb_strlen($needle) >= 4 ? mb_strpos($haystack, $needle) : false,
+                ];
+            })
+            ->filter(fn (array $match) => $match['position'] !== false)
+            // Nama terpanjang dulu agar "Porsche 911 GT3" menang atas "Porsche 911".
+            ->sortByDesc(fn (array $match) => mb_strlen($match['needle']))
+            ->each(function (array $match) use ($selected) {
+                $overlaps = $selected->contains(fn (array $picked) => str_contains($picked['needle'], $match['needle']));
+                if (! $overlaps) {
+                    $selected->push($match);
+                }
+            });
+
+        return $selected
+            ->sortBy('position')
+            ->take($limit)
+            ->pluck('product')
+            ->values();
+    }
+
+    private function normalizeForMatch(string $text): string
+    {
+        $text = str_replace(['**', '`', '*'], '', mb_strtolower($text));
+
+        return trim(preg_replace('/\s+/u', ' ', $text));
     }
 
     /**
@@ -224,11 +296,30 @@ class ChatbotService
     }
 
     /**
-     * Panggil API AI (format OpenAI-compatible) dengan konteks produk & riwayat percakapan.
+     * Susun pesan untuk API AI: prompt sistem, konteks halaman, riwayat, lalu pertanyaan.
      *
      * @param  array<int, array{role: string, content: string}>  $conversation
+     * @return array<int, array{role: string, content: string}>
      */
-    private function askAi(string $question, array $conversation = []): string
+    private function buildMessages(string $question, array $conversation, ?Product $pageProduct): array
+    {
+        $system = [['role' => 'system', 'content' => $this->systemPrompt()]];
+
+        if ($pageProduct) {
+            $price = 'Rp'.number_format((float) $pageProduct->price, 0, ',', '.');
+            $stock = $pageProduct->stock > 0 ? "stok {$pageProduct->stock}" : 'stok HABIS';
+
+            $system[] = [
+                'role' => 'system',
+                'content' => "KONTEKS HALAMAN: Pengguna sedang membuka halaman produk \"{$pageProduct->name}\" ({$price}, {$stock}). "
+                    .'Jika pertanyaan memakai kata seperti "ini", "produk ini", atau tidak menyebut nama produk, anggap yang dimaksud adalah produk tersebut.',
+            ];
+        }
+
+        return array_merge($system, $conversation, [['role' => 'user', 'content' => $question]]);
+    }
+
+    private function client(): PendingRequest
     {
         $apiKey = config('services.chatbot.api_key');
 
@@ -238,22 +329,35 @@ class ChatbotService
             throw new RuntimeException('Layanan chatbot sedang tidak tersedia.');
         }
 
-        $baseUrl = rtrim((string) config('services.chatbot.base_url'), '/');
-        $model = (string) config('services.chatbot.model');
+        return Http::withToken($apiKey)
+            ->timeout((int) config('services.chatbot.timeout', 30));
+    }
 
-        $response = Http::withToken($apiKey)
-            ->timeout((int) config('services.chatbot.timeout', 30))
+    private function payload(array $messages): array
+    {
+        return [
+            'model' => (string) config('services.chatbot.model'),
+            'temperature' => (float) config('services.chatbot.temperature', 0.3),
+            'max_tokens' => (int) config('services.chatbot.max_tokens', 600),
+            'messages' => $messages,
+        ];
+    }
+
+    private function endpoint(): string
+    {
+        return rtrim((string) config('services.chatbot.base_url'), '/').'/chat/completions';
+    }
+
+    /**
+     * Panggil API AI (format OpenAI-compatible) dan tunggu jawaban lengkap.
+     *
+     * @param  array<int, array{role: string, content: string}>  $messages
+     */
+    private function askAi(array $messages): string
+    {
+        $response = $this->client()
             ->acceptJson()
-            ->post("{$baseUrl}/chat/completions", [
-                'model' => $model,
-                'temperature' => (float) config('services.chatbot.temperature', 0.3),
-                'max_tokens' => (int) config('services.chatbot.max_tokens', 600),
-                'messages' => array_merge(
-                    [['role' => 'system', 'content' => $this->systemPrompt()]],
-                    $conversation,
-                    [['role' => 'user', 'content' => $question]],
-                ),
-            ]);
+            ->post($this->endpoint(), $this->payload($messages));
 
         if ($response->failed()) {
             Log::error('Chatbot API error', [
@@ -267,6 +371,74 @@ class ChatbotService
         $answer = data_get($response->json(), 'choices.0.message.content');
 
         if (empty($answer)) {
+            throw new RuntimeException('Layanan chatbot tidak mengembalikan jawaban.');
+        }
+
+        return trim($answer);
+    }
+
+    /**
+     * Panggil API AI dengan stream (Server-Sent Events) dan teruskan tiap potongan teks.
+     * Bila penyedia tidak mendukung stream, jawaban penuh dikirim sekaligus.
+     *
+     * @param  array<int, array{role: string, content: string}>  $messages
+     * @param  callable(string): void  $onDelta
+     */
+    private function streamAi(array $messages, callable $onDelta): string
+    {
+        $response = $this->client()
+            ->withOptions(['stream' => true])
+            ->withHeaders(['Accept' => 'text/event-stream'])
+            ->post($this->endpoint(), $this->payload($messages) + ['stream' => true]);
+
+        if ($response->failed()) {
+            Log::error('Chatbot API error (stream)', [
+                'status' => $response->status(),
+                'body' => mb_substr($response->body(), 0, 2000),
+            ]);
+
+            throw new RuntimeException('Layanan chatbot sedang sibuk. Silakan coba lagi nanti.');
+        }
+
+        if (! str_contains((string) $response->header('Content-Type'), 'text/event-stream')) {
+            $answer = trim((string) data_get($response->json(), 'choices.0.message.content'));
+            if ($answer === '') {
+                throw new RuntimeException('Layanan chatbot tidak mengembalikan jawaban.');
+            }
+            $onDelta($answer);
+
+            return $answer;
+        }
+
+        $body = $response->toPsrResponse()->getBody();
+        $buffer = '';
+        $answer = '';
+
+        while (! $body->eof()) {
+            $buffer .= $body->read(1024);
+
+            while (($newline = strpos($buffer, "\n")) !== false) {
+                $line = trim(substr($buffer, 0, $newline));
+                $buffer = substr($buffer, $newline + 1);
+
+                if (! str_starts_with($line, 'data:')) {
+                    continue;
+                }
+
+                $data = trim(substr($line, 5));
+                if ($data === '[DONE]') {
+                    break 2;
+                }
+
+                $delta = data_get(json_decode($data, true), 'choices.0.delta.content');
+                if (is_string($delta) && $delta !== '') {
+                    $answer .= $delta;
+                    $onDelta($delta);
+                }
+            }
+        }
+
+        if (trim($answer) === '') {
             throw new RuntimeException('Layanan chatbot tidak mengembalikan jawaban.');
         }
 
@@ -327,6 +499,8 @@ class ChatbotService
         **Rekomendasi:** (1-2 kalimat saran singkat sesuai kebutuhan atau anggaran pembeli).
 
         - Gunakan **teks tebal** untuk nama produk/label, dan tanda "- " untuk daftar.
+        - Tulis nama produk PERSIS seperti di DATA PRODUK (huruf & angka sama), karena sistem otomatis menampilkan kartu produk yang namanya kamu sebut.
+        - Boleh menautkan halaman toko dengan format [teks](/alamat), HANYA untuk: /promo, /kategori, /cart, /checkout, /orders. Jangan membuat tautan lain.
         - Maksimal 4-5 poin per produk agar ringkas.
 
         GAYA:

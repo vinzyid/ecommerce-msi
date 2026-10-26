@@ -42,18 +42,37 @@ class Product extends Model
         ];
     }
 
+    /**
+     * Diskon dianggap ada bila potongannya minimal 1% (hindari label "-0%").
+     */
     public function hasDiscount(): bool
     {
-        return $this->compare_at_price !== null && (int) $this->compare_at_price > (int) $this->price;
+        return $this->rawDiscountPercent() >= 1;
     }
 
+    /**
+     * Persentase diskon untuk ditampilkan, dibatasi 1–99% agar tidak pernah
+     * tertulis "-100%" untuk produk yang tidak gratis.
+     */
     public function discountPercent(): int
     {
         if (! $this->hasDiscount()) {
             return 0;
         }
 
-        return (int) round((1 - (int) $this->price / (int) $this->compare_at_price) * 100);
+        return (int) min(99, max(1, round($this->rawDiscountPercent())));
+    }
+
+    private function rawDiscountPercent(): float
+    {
+        $compare = (float) $this->compare_at_price;
+        $price = (float) $this->price;
+
+        if ($this->compare_at_price === null || $compare <= 0 || $compare <= $price) {
+            return 0.0;
+        }
+
+        return (1 - $price / $compare) * 100;
     }
 
     public function averageRating(): ?float

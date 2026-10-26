@@ -89,6 +89,43 @@
     </p>
 </div>
 
+{{-- Kualitas jawaban dari penilaian pengguna --}}
+<section class="mt-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <p class="text-xs font-semibold text-ink-500">Penilaian pengguna</p>
+            <h2 class="mt-1 text-base font-extrabold text-ink-900">Kualitas Jawaban Chatbot</h2>
+        </div>
+        <div class="flex items-center gap-4 text-sm tabular-nums">
+            <span class="font-bold text-success-600">👍 {{ number_format($feedback['helpful'], 0, ',', '.') }}</span>
+            <span class="font-bold text-danger-600">👎 {{ number_format($feedback['unhelpful'], 0, ',', '.') }}</span>
+            <span class="rounded-lg bg-ink-50 px-2.5 py-1 font-extrabold text-ink-900">
+                {{ $feedback['satisfaction'] !== null ? $feedback['satisfaction'].'% puas' : 'Belum ada penilaian' }}
+            </span>
+        </div>
+    </div>
+
+    @if ($feedback['total'] > 0)
+        <div class="mt-3 h-2 overflow-hidden rounded-full bg-danger-500/20" role="img"
+             aria-label="{{ $feedback['satisfaction'] }}% penilaian membantu">
+            <div class="h-full rounded-full bg-success-500" style="width: {{ $feedback['satisfaction'] }}%"></div>
+        </div>
+    @endif
+
+    <h3 class="mt-5 text-xs font-bold uppercase tracking-wide text-ink-400">Jawaban terbaru yang dinilai tidak membantu</h3>
+    @forelse ($feedback['recent_unhelpful'] as $item)
+        <div class="mt-2 rounded-xl border border-ink-100 bg-ink-50/60 p-3 text-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="font-semibold text-ink-900">{{ $item->question }}</p>
+                <span class="text-xs text-ink-400">{{ $item->user?->username ?? 'Tamu' }} &bull; {{ $item->created_at->diffForHumans() }}</span>
+            </div>
+            <p class="mt-1 line-clamp-2 text-xs text-ink-500">{{ $item->answer }}</p>
+        </div>
+    @empty
+        <p class="mt-2 text-sm text-ink-500">Belum ada jawaban yang dinilai tidak membantu.</p>
+    @endforelse
+</section>
+
 {{-- Aksi --}}
 <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
     <form method="GET" class="relative min-w-0 flex-1 sm:max-w-xs">

@@ -14,7 +14,7 @@
         <header class="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <span class="text-xs font-bold uppercase tracking-wide text-brand-600">Pesanan / {{ $order->ordered_at->format('d.m.Y') }}</span>
-                <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-ink-900">{{ $order->order_number }}</h1>
+                <h1 class="mt-1 text-2xl font-semibold tracking-tight text-ink-900">{{ $order->order_number }}</h1>
             </div>
             <x-status-badge :status="$order->status" class="!px-3.5 !py-1.5 !text-sm" />
         </header>
@@ -45,7 +45,7 @@
                             $isCurrent = $statusIndex === $i;
                         @endphp
                         <li class="flex flex-1 items-center gap-2 {{ $isDone ? ($isCurrent ? 'text-brand-600 font-bold' : 'text-emerald-600') : 'text-ink-400' }}">
-                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs transition {{ $isDone ? ($isCurrent ? 'bg-brand-600 text-white shadow-sm ring-4 ring-brand-100' : 'bg-emerald-600 text-white') : 'bg-ink-100 text-ink-400' }}">
+                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs transition {{ $isDone ? ($isCurrent ? 'bg-ink-900 text-white ring-4 ring-brand-100' : 'bg-emerald-600 text-white') : 'bg-ink-100 text-ink-400' }}">
                                 <svg class="h-4 w-4"><use href="#{{ $icon }}"/></svg>
                             </span>
                             <span class="hidden sm:inline truncate">{{ $label }}</span>
@@ -65,7 +65,7 @@
                     <div class="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50/80 to-white p-5 shadow-card">
                         <div class="flex items-center justify-between gap-2.5">
                             <div class="flex items-center gap-2.5">
-                                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-xs">
+                                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-ink-900 text-white">
                                     <svg class="h-5 w-5"><use href="#i-credit-card"/></svg>
                                 </span>
                                 <div>
@@ -80,11 +80,11 @@
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <div>
                                     <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Bank Central Asia (BCA) Virtual Account</span>
-                                    <div class="mt-1 font-mono text-lg font-black tracking-wider text-brand-700">8801 2345 6789 00</div>
+                                    <div class="mt-1 font-mono text-lg font-semibold tracking-wider text-brand-700">8801 2345 6789 00</div>
                                     <p class="text-[11px] text-ink-500">a.n. PT VinzyPlay Indonesia</p>
                                 </div>
                                 <button type="button" data-copy-voucher="88012345678900"
-                                        class="rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-600 hover:text-white">
+                                        class="rounded-full border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 transition hover:bg-ink-900 hover:text-white">
                                     Salin Rekening
                                 </button>
                             </div>
@@ -92,7 +92,7 @@
 
                         <div class="mt-3 flex items-center justify-between text-xs text-ink-600">
                             <span>Total yang harus dibayar:</span>
-                            <strong class="font-mono text-base font-black text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</strong>
+                            <strong class="font-mono text-base font-semibold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</strong>
                         </div>
 
                         {{-- Tombol Simulasi Pembayaran (Mode Demo / Sandbox) --}}
@@ -137,7 +137,7 @@
                             </div>
                             <div>
                                 <dt class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Nominal Dibayar</dt>
-                                <dd class="mt-0.5 font-mono font-black text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</dd>
+                                <dd class="mt-0.5 font-mono font-semibold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</dd>
                             </div>
                         </dl>
                     </div>
@@ -157,7 +157,7 @@
                 @if ($order->status === 'processing')
                     <div class="rounded-2xl border border-dashed border-brand-300 bg-brand-50/50 p-4 shadow-card">
                         <div class="flex items-start gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-900 text-white">
                                 <svg class="h-5 w-5"><use href="#i-package"/></svg>
                             </span>
                             <div class="min-w-0 flex-1">
@@ -167,7 +167,7 @@
                                       onsubmit="return confirm('Simulasikan penjual mengirim paket ini ke kurir? Nomor resi akan diterbitkan otomatis.');">
                                     @csrf
                                     <button type="submit"
-                                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.99]">
+                                            class="inline-flex items-center justify-center gap-2 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-ink-700 active:scale-[0.99]">
                                         <svg class="h-4.5 w-4.5"><use href="#i-truck"/></svg>
                                         Kirim Pesanan &amp; Terbitkan Resi (Simulasi)
                                     </button>
@@ -214,7 +214,7 @@
                 @if (in_array($order->status, ['shipped', 'completed']))
                     @php $timeline = $order->trackingTimeline(); @endphp
                     <div class="overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card" id="lacak">
-                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 bg-brand-600 px-5 py-4 text-white">
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 bg-ink-900 px-5 py-4 text-white">
                             <div class="flex items-center gap-2.5">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
                                     <svg class="h-5 w-5"><use href="#i-truck"/></svg>
@@ -258,14 +258,14 @@
                                     @if (! $loop->last)
                                         <span class="absolute left-[13px] top-7 h-full w-0.5 {{ $event['done'] ? 'bg-emerald-500' : 'bg-ink-200' }}"></span>
                                     @endif
-                                    <span class="relative z-10 mt-0.5 flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-full ring-4 {{ $event['done'] ? 'bg-emerald-600 text-white ring-emerald-100' : ($event['current'] ? 'bg-brand-600 text-white ring-brand-100' : 'bg-ink-200 text-white ring-ink-50') }}">
+                                    <span class="relative z-10 mt-0.5 flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-full ring-4 {{ $event['done'] ? 'bg-emerald-600 text-white ring-emerald-100' : ($event['current'] ? 'bg-ink-900 text-white ring-brand-100' : 'bg-ink-200 text-white ring-ink-50') }}">
                                         <svg class="h-3.5 w-3.5"><use href="#i-check"/></svg>
                                     </span>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <p class="text-xs font-bold {{ $event['done'] ? 'text-ink-900' : 'text-ink-400' }}">{{ $event['title'] }}</p>
                                             @if ($isLatest)
-                                                <span class="rounded bg-emerald-600 px-1.5 py-0.5 text-[9px] font-black uppercase text-white">Terbaru</span>
+                                                <span class="rounded bg-emerald-600 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-white">Terbaru</span>
                                             @endif
                                         </div>
                                         <p class="mt-0.5 text-[11px] leading-relaxed {{ $event['done'] ? 'text-ink-500' : 'text-ink-300' }}">{{ $event['desc'] }}</p>
@@ -288,7 +288,7 @@
                                     <div class="mt-0.5 text-xs text-ink-500">{{ $item->quantity }} &times; Rp{{ number_format($item->price, 0, ',', '.') }}</div>
                                 </div>
                                 <div class="text-right">
-                                    <b class="block text-sm font-extrabold text-ink-900">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</b>
+                                    <b class="block text-sm font-semibold text-ink-900">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</b>
                                     @if ($order->status === 'completed' && $item->product)
                                         <a href="{{ route('products.show', $item->product) }}#ulasan"
                                            class="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-brand-600 hover:text-brand-700">
@@ -319,13 +319,13 @@
 
                     <div class="mt-4 flex items-end justify-between border-t border-ink-100 pt-4">
                         <span class="text-sm font-semibold text-ink-600">Total</span>
-                        <strong class="text-xl font-extrabold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</strong>
+                        <strong class="text-xl font-semibold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</strong>
                     </div>
                 </div>
             </section>
 
             <aside class="h-fit rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
-                <h2 class="text-base font-extrabold text-ink-900">Informasi Pengiriman</h2>
+                <h2 class="text-base font-semibold text-ink-900">Informasi Pengiriman</h2>
                 <dl class="mt-4 space-y-3 text-sm">
                     <div>
                         <dt class="text-xs font-semibold uppercase tracking-wide text-ink-400">Penerima</dt>

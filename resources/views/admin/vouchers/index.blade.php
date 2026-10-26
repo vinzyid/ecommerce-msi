@@ -54,7 +54,7 @@
                         <td class="px-5 py-3.5 text-center font-bold text-ink-700">
                             {{ $voucher->used_count }}{{ $voucher->usage_limit ? ' / '.$voucher->usage_limit : '' }}
                         </td>
-                        <td class="px-5 py-3.5 text-ink-500">{{ $voucher->expires_at?->format('d M Y') ?? 'Tanpa batas' }}</td>
+                        <td class="px-5 py-3.5 text-ink-500">{{ $voucher->expires_at?->translatedFormat('d M Y') ?? 'Tanpa batas' }}</td>
                         <td class="px-5 py-3.5">
                             @if ($voucher->isUsable())
                                 <span class="inline-flex items-center rounded-lg bg-success-500/15 px-2.5 py-1 text-xs font-bold text-success-600">Aktif</span>

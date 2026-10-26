@@ -23,7 +23,7 @@
     $donutSegments = [];
     foreach ($statusOrder as $row) {
         $share = $row['total'] / $statusTotal * 100;
-        $color = ['pending' => '#ff9500', 'processing' => '#2f83ff', 'shipped' => '#133fa6', 'completed' => '#10b981', 'cancelled' => '#f43f5e'][$row['status']];
+        $color = ['pending' => '#ff9500', 'processing' => '#0071e3', 'shipped' => '#003e7a', 'completed' => '#30a46c', 'cancelled' => '#e5484d'][$row['status']];
         $donutSegments[] = $color.' '.round($cursor, 2).'% '.round($cursor + $share, 2).'%';
         $cursor += $share;
     }
@@ -31,11 +31,21 @@
     $revenueMax = max(1, (int) $revenueByMonth->max('total'));
     $revenueTotal = (int) $revenueByMonth->sum('total');
 
+    // Ringkas: Rp164,8 jt / Rp60 rb, agar label grafik tidak berdesakan
+    $shortRupiah = function (float $value): string {
+        return match (true) {
+            $value >= 1_000_000_000 => 'Rp'.number_format($value / 1_000_000_000, 1, ',', '.').' M',
+            $value >= 1_000_000 => 'Rp'.number_format($value / 1_000_000, 1, ',', '.').' jt',
+            $value >= 1_000 => 'Rp'.number_format($value / 1_000, 0, ',', '.').' rb',
+            default => 'Rp'.number_format($value, 0, ',', '.'),
+        };
+    };
+
     $statCards = [
-        ['Produk aktif', $stats['products'], 'i-box', 'bg-brand-50 text-brand-600'],
-        ['Stok rendah (≤5)', $stats['low_stock'], 'i-bolt', 'bg-accent-500/15 text-accent-600'],
-        ['Perlu diproses', $stats['pending_orders'], 'i-clock', 'bg-danger-500/15 text-danger-600'],
-        ['Pelanggan', $stats['customers'], 'i-users', 'bg-success-500/15 text-success-600'],
+        ['Produk aktif', $stats['products'], 'i-box', 'bg-ink-50 text-ink-700'],
+        ['Stok rendah (≤5)', $stats['low_stock'], 'i-bolt', $stats['low_stock'] > 0 ? 'bg-accent-500/15 text-accent-600' : 'bg-ink-50 text-ink-700'],
+        ['Perlu diproses', $stats['pending_orders'], 'i-clock', $stats['pending_orders'] > 0 ? 'bg-brand-50 text-brand-600' : 'bg-ink-50 text-ink-700'],
+        ['Pelanggan', $stats['customers'], 'i-users', 'bg-ink-50 text-ink-700'],
     ];
 @endphp
 
@@ -82,15 +92,19 @@
     <article class="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
         <div class="mb-4 flex items-center justify-between">
             <h2 class="text-sm font-extrabold text-ink-900">Pendapatan bulanan</h2>
-            <span class="text-xs font-semibold text-ink-400">Rp{{ number_format($revenueTotal, 0, ',', '.') }}</span>
+            <span class="text-xs font-medium tabular-nums text-ink-500">{{ $shortRupiah($revenueTotal) }} &middot; 6 bulan</span>
         </div>
         <div class="flex h-48 items-end justify-between gap-2">
             @foreach ($revenueByMonth as $month)
                 <div class="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-                    <span class="text-[10px] font-bold text-ink-500">Rp{{ number_format($month['total'] / 1000, 0, ',', '.') }}k</span>
+                    <span class="whitespace-nowrap text-[10px] font-medium tabular-nums text-ink-500">{{ $month['total'] > 0 ? $shortRupiah($month['total']) : '' }}</span>
                     <span class="flex w-full flex-1 items-end">
-                        <span class="w-full rounded-t-lg bg-gradient-to-t from-brand-700 to-brand-400"
-                              style="height: {{ round($month['total'] / $revenueMax * 100, 1) }}%"></span>
+                        @if ($month['total'] > 0)
+                            <span @class(['w-full rounded-t-md', 'bg-brand-600' => $loop->last, 'bg-brand-200' => ! $loop->last])
+                                  style="height: {{ max(2, round($month['total'] / $revenueMax * 100, 1)) }}%"></span>
+                        @else
+                            <span class="h-0.5 w-full rounded-full bg-ink-100" title="Belum ada pendapatan"></span>
+                        @endif
                     </span>
                     <span class="text-[10px] font-semibold text-ink-400">{{ $month['label'] }}</span>
                 </div>
@@ -157,7 +171,7 @@
                             <a href="{{ route('admin.orders.show', $order) }}" class="font-semibold text-brand-600 hover:text-brand-700">{{ $order->order_number }}</a>
                         </td>
                         <td class="px-5 py-3.5 font-medium text-ink-700">{{ $order->user->username }}</td>
-                        <td class="px-5 py-3.5 text-ink-500">{{ $order->ordered_at->format('d M Y, H:i') }}</td>
+                        <td class="px-5 py-3.5 text-ink-500">{{ $order->ordered_at->translatedFormat('d M Y, H:i') }}</td>
                         <td class="px-5 py-3.5 font-bold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</td>
                         <td class="px-5 py-3.5"><x-status-badge :status="$order->status" /></td>
                     </tr>

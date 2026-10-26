@@ -29,6 +29,9 @@ Route::get('/products/{product}', [CatalogController::class, 'show'])->name('pro
 Route::post('/chatbot', [ChatbotController::class, 'ask'])
     ->middleware('throttle:chatbot')
     ->name('chatbot.ask');
+Route::post('/chatbot/feedback', [ChatbotController::class, 'feedback'])
+    ->middleware('throttle:chatbot')
+    ->name('chatbot.feedback');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
@@ -91,3 +94,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::delete('/chatbot/purge', [AdminChatbotController::class, 'purge'])->name('chatbot.purge');
     Route::delete('/chatbot/{chatbotMessage}', [AdminChatbotController::class, 'destroy'])->name('chatbot.destroy');
 });
+
+// Halaman uji kartu produk dengan data ekstrem, hanya ada di lingkungan lokal.
+if (app()->environment('local')) {
+    Route::get('/_dev/break-ui', function (\Illuminate\Http\Request $request) {
+        $states = \App\Support\Dev\ProductCardFixtures::STATES;
+        $state = array_key_exists($request->query('data'), $states) ? $request->query('data') : 'demo';
+
+        return view('dev.break-ui', [
+            'states' => $states,
+            'state' => $state,
+            'products' => \App\Support\Dev\ProductCardFixtures::for($state),
+            'wishlistedProductIds' => [],
+        ]);
+    })->name('dev.break-ui');
+}

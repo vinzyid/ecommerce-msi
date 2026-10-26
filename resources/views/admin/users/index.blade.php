@@ -68,7 +68,7 @@
                             @endif
                         </td>
                         <td class="px-5 py-3.5 text-center font-bold text-ink-700">{{ $user->orders_count }}</td>
-                        <td class="px-5 py-3.5 text-ink-500">{{ $user->created_at->format('d M Y') }}</td>
+                        <td class="px-5 py-3.5 text-ink-500">{{ $user->created_at->translatedFormat('d M Y') }}</td>
                         <td class="px-5 py-3.5 text-right">
                             <a href="{{ route('admin.users.show', $user) }}"
                                class="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700">
