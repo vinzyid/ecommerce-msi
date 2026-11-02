@@ -5,20 +5,32 @@
 
 @section('content')
 <div class="flex flex-wrap gap-1.5">
-    <a href="{{ route('admin.orders.index') }}"
+    <a href="{{ route('admin.orders.index', array_filter(['q' => $search])) }}"
        @class([
            'rounded-xl px-3.5 py-2 text-xs font-bold transition',
            'bg-brand-600 text-white shadow-sm' => ! $status,
            'border border-ink-200 bg-white text-ink-600 hover:border-brand-300 hover:text-brand-700' => (bool) $status,
        ])>Semua</a>
     @foreach (\App\Models\Order::STATUSES as $value)
-        <a href="{{ route('admin.orders.index', ['status' => $value]) }}"
+        <a href="{{ route('admin.orders.index', array_filter(['status' => $value, 'q' => $search])) }}"
            @class([
                'rounded-xl px-3.5 py-2 text-xs font-bold transition',
                'bg-brand-600 text-white shadow-sm' => $status === $value,
                'border border-ink-200 bg-white text-ink-600 hover:border-brand-300 hover:text-brand-700' => $status !== $value,
            ])>{{ ucfirst($value) }}</a>
     @endforeach
+</div>
+
+<div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+    <form method="GET" action="{{ route('admin.orders.index') }}" class="flex min-w-0 flex-1 gap-2 sm:max-w-md">
+        @if ($status)<input type="hidden" name="status" value="{{ $status }}">@endif
+        <label for="order-search" class="sr-only">Cari pesanan</label>
+        <input id="order-search" name="q" type="search" value="{{ $search }}" maxlength="100" placeholder="Nomor, nama, email, atau username"
+               class="min-w-0 flex-1 rounded-xl border border-ink-200 bg-white px-3.5 py-2 text-base outline-none focus:border-ink-400 sm:text-xs">
+        <button type="submit" class="rounded-xl bg-ink-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-ink-700">Cari</button>
+    </form>
+    <a href="{{ route('admin.orders.export', array_filter(['status' => $status, 'q' => $search])) }}"
+       class="rounded-xl border border-ink-200 bg-white px-3.5 py-2 text-xs font-bold text-ink-600 transition hover:border-brand-300 hover:text-brand-700">Unduh CSV</a>
 </div>
 
 <section class="mt-5 overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-card">

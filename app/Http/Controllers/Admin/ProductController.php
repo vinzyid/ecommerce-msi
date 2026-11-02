@@ -7,12 +7,15 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProductController extends Controller
 {
+    private const UPLOAD_DIR = 'images/products/uploads';
+
     public function index(Request $request): View
     {
         $search = $request->validate(['q' => 'nullable|string|max:100'])['q'] ?? null;
@@ -38,6 +41,7 @@ class ProductController extends Controller
     {
         $validated = $this->validateProduct($request);
         $validated['slug'] = $this->uniqueSlug($validated['name']);
+        $validated = $this->withUploadedImage($request, $validated);
         $validated['is_active'] = $request->boolean('is_active');
         $validated['is_featured'] = $request->boolean('is_featured');
         Product::query()->create($validated);
@@ -55,6 +59,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $this->validateProduct($request, $product);
+        $validated = $this->withUploadedImage($request, $validated, $product);
 
         if ($validated['name'] !== $product->name) {
             $validated['slug'] = $this->uniqueSlug($validated['name'], $product);
@@ -83,11 +88,38 @@ class ProductController extends Controller
             'dimensions' => 'nullable|string|max:80',
             'stock' => 'required|integer|min:0|max:1000000',
             'image_url' => ['nullable', 'string', 'max:500', 'regex:/^(https?:\\/\\/|\\/images\\/)[^\\s]+$/'],
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'is_active' => 'nullable|boolean',
             'is_featured' => 'nullable|boolean',
         ], [
             'compare_at_price.gte' => 'Harga sebelum diskon harus lebih besar atau sama dengan harga jual.',
+            'image.image' => 'File harus berupa gambar.',
+            'image.mimes' => 'Gambar harus berformat JPG, PNG, atau WEBP.',
+            'image.max' => 'Ukuran gambar maksimal 2 MB.',
         ]);
+    }
+
+    /**
+     * Simpan foto yang diunggah ke folder publik dan hapus foto unggahan lama.
+     */
+    private function withUploadedImage(Request $request, array $validated, ?Product $product = null): array
+    {
+        unset($validated['image']);
+
+        if (! $request->hasFile('image')) {
+            return $validated;
+        }
+
+        $file = $request->file('image');
+        $name = $file->hashName();
+        $file->move(public_path(self::UPLOAD_DIR), $name);
+        $validated['image_url'] = '/'.self::UPLOAD_DIR.'/'.$name;
+
+        if (str_starts_with((string) $product?->image_url, '/'.self::UPLOAD_DIR.'/')) {
+            File::delete(public_path(ltrim($product->image_url, '/')));
+        }
+
+        return $validated;
     }
 
     private function uniqueSlug(string $name, ?Product $ignore = null): string

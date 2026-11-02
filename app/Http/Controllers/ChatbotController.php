@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChatbotFeedback;
+use App\Models\Order;
 use App\Models\Product;
 use App\Services\ChatbotService;
 use Illuminate\Http\JsonResponse;
@@ -124,6 +125,11 @@ class ChatbotController extends Controller
             'blocked' => $result['blocked'],
             'message_id' => $result['message_id'],
             'products' => $this->productCards($result['products']),
+            'orders' => $result['orders']->map(fn (Order $order) => [
+                'number' => $order->order_number,
+                'status' => $order->statusLabel(),
+                'url' => route('orders.show', $order),
+            ])->all(),
         ];
     }
 

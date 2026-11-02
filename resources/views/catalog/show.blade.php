@@ -78,7 +78,6 @@
                     <span class="text-sm font-medium text-danger-600">Hemat {{ $rupiah($product->compare_at_price - $product->price) }}</span>
                 @endif
             </div>
-            <p class="mt-1 text-sm text-ink-500">atau cicilan mulai {{ $rupiah(ceil($product->price / 12)) }}/bulan</p>
 
             <p class="mt-4 text-sm">
                 @if ($product->stock > 5)
@@ -152,7 +151,7 @@
             {{-- Layanan --}}
             <ul class="mt-8 divide-y divide-ink-100 rounded-2xl border border-ink-100 text-sm">
                 @foreach ([
-                    ['i-truck', 'Gratis ongkir', 'Untuk belanja min. Rp300.000. Tiba 2–4 hari kerja via JNE, SiCepat, J&T, atau GoSend.'],
+                    ['i-truck', 'Gratis ongkir', 'Untuk belanja min. Rp300.000 dengan Pengiriman Reguler via JNE.'],
                     ['i-shield', 'Original & bergaransi resmi', 'Dikirim langsung dari gudang kami di Yogyakarta.'],
                     ['i-refresh', 'Retur 7 hari', 'Barang rusak atau tidak sesuai, kami ganti baru.'],
                 ] as [$icon, $title, $desc])
@@ -166,11 +165,27 @@
                 @endforeach
             </ul>
 
-            <button type="button" onclick="document.querySelector('[data-chatbot-toggle]')?.click()"
-                    class="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand-600 hover:underline">
-                <svg class="h-4.5 w-4.5" aria-hidden="true"><use href="#i-headset"/></svg>
-                Ada pertanyaan? Tanya asisten toko
+        </div>
+    </div>
+</section>
+
+{{-- Kartu toko --}}
+<section class="container-page mt-10">
+    <div class="flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-ink-100 bg-white p-5">
+        <div class="flex min-w-0 items-center gap-3">
+            <x-logo :wordmark="false" class="[&>svg]:h-12 [&>svg]:w-12" />
+            <div class="min-w-0">
+                <p class="truncate font-semibold text-ink-900">{{ config('app.name') }}</p>
+                <p class="text-xs text-ink-500">Toko gaming, diecast &amp; hobi</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="const toggle = document.querySelector('[data-chatbot-toggle]'); if (toggle?.getAttribute('aria-expanded') !== 'true') toggle?.click();"
+                    class="inline-flex items-center gap-2 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-white hover:bg-ink-700">
+                <svg class="h-4 w-4" aria-hidden="true"><use href="#i-headset"/></svg>
+                Chat Toko
             </button>
+            <a href="{{ route('home') }}" class="rounded-full border border-ink-200 px-4 py-2 text-sm font-medium text-ink-800 hover:border-ink-900">Kunjungi Toko</a>
         </div>
     </div>
 </section>
@@ -229,7 +244,7 @@
             @auth
                 @if ($canReview)
                     @php $editing = $userReview !== null; @endphp
-                    <form method="POST" action="{{ route('reviews.store', $product) }}" class="rounded-[1.5rem] bg-ink-50 p-6">
+                    <form method="POST" action="{{ route('reviews.store', $product) }}" enctype="multipart/form-data" class="rounded-[1.5rem] bg-ink-50 p-6">
                         @csrf
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <h3 class="text-base font-semibold text-ink-900">{{ $editing ? 'Ubah ulasan kamu' : 'Tulis ulasan' }}</h3>
@@ -256,6 +271,12 @@
                                 <label for="comment" class="block text-sm text-ink-700">Ulasan <span class="text-ink-400">(opsional)</span></label>
                                 <textarea id="comment" name="comment" rows="3" maxlength="500" placeholder="Ceritakan kualitas produk, fungsi, dan pengemasan"
                                           class="{{ $inputClass }}">{{ old('comment', $userReview?->comment) }}</textarea>
+                            </div>
+                            <div>
+                                <label for="photo" class="block text-sm text-ink-700">Foto <span class="text-ink-400">(opsional, maks. 2 MB)</span></label>
+                                <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp"
+                                       class="mt-1.5 block w-full text-xs text-ink-600 file:mr-3 file:rounded-full file:border file:border-ink-200 file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ink-800">
+                                @error('photo')<p class="mt-1.5 text-xs font-medium text-danger-600">{{ $message }}</p>@enderror
                             </div>
                             <button type="submit" class="rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-ink-700">
                                 {{ $editing ? 'Perbarui ulasan' : 'Kirim ulasan' }}
@@ -294,6 +315,12 @@
                         <p class="mt-3 text-sm leading-relaxed text-ink-700">{{ $review->comment }}</p>
                     @endif
 
+                    @if ($review->photo_path)
+                        <a href="{{ $review->photo_path }}" target="_blank" rel="noopener" class="mt-3 inline-block">
+                            <img src="{{ $review->photo_path }}" alt="Foto ulasan dari {{ $review->user->username }}" loading="lazy" class="h-24 w-24 rounded-xl object-cover">
+                        </a>
+                    @endif
+
                     @auth
                         @if ($review->user_id === auth()->id() || auth()->user()->is_admin)
                             <form method="POST" action="{{ route('reviews.destroy', $review) }}" class="mt-2">
@@ -318,6 +345,17 @@
         <div class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-6">
             @foreach ($relatedProducts as $related)
                 <x-product-card :product="$related" :wishlisted-product-ids="$wishlistedProductIds" />
+            @endforeach
+        </div>
+    </section>
+@endif
+
+@if ($storeProducts->isNotEmpty())
+    <section class="container-page mt-20">
+        <h2 class="text-2xl font-semibold tracking-tight text-ink-900">Produk Lainnya dari Toko Ini</h2>
+        <div class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-6">
+            @foreach ($storeProducts as $storeProduct)
+                <x-product-card :product="$storeProduct" :wishlisted-product-ids="$wishlistedProductIds" />
             @endforeach
         </div>
     </section>

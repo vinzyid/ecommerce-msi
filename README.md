@@ -28,22 +28,25 @@ Proyek ini dibuat oleh **Rafi Pandya P** untuk mata kuliah Praktik MSI.
 
 | Area | Yang bisa dilakukan pembeli |
 |---|---|
-| **Katalog** | Mencari produk, memfilter kategori, melihat banner promo, flash sale dengan hitung mundur, dan halaman promo |
+| **Katalog** | Mencari produk dengan riwayat dan saran saat mengetik, memfilter kategori dan rentang harga, melihat banner promo, flash sale dengan hitung mundur, dan halaman promo |
 | **Voucher** | Menyalin kode dari halaman promo, lalu memakainya di keranjang atau checkout |
-| **Produk** | Melihat detail, simulasi cicilan, ulasan pembeli, dan menyimpan ke wishlist |
+| **Produk** | Melihat detail, ulasan berfoto, produk lain dari toko, chat toko, dan menyimpan ke wishlist |
 | **Keranjang** | Memilih barang yang mau dibeli, mengubah jumlah, dan melihat total langsung berubah |
 | **Checkout** | Memilih alamat tersimpan, Pengiriman Reguler atau Kilat, lalu Transfer Bank (Virtual Account), QRIS, atau COD |
-| **Pesanan** | Mengikuti status pesanan, nomor resi, dan timeline perjalanan paket |
+| **Pesanan** | Mengikuti status, nomor resi, dan timeline paket, membatalkan pesanan yang belum dikirim, dan membeli lagi dari riwayat dengan tab status |
 | **Invoice** | Mencetak invoice pesanan atau menyimpannya sebagai PDF lewat browser |
-| **Ulasan** | Mengulas produk setelah pesanan selesai |
-| **Akun** | Mengelola profil, buku alamat, password, dan riwayat pesanan |
+| **Ulasan** | Menilai beberapa barang sekaligus langsung dari riwayat atau detail pesanan setelah pesanan selesai |
+| **Email** | Menerima email saat pesanan dibuat, diproses, dikirim, atau dibatalkan |
+| **Akun** | Mengelola profil, buku alamat, password, dan riwayat pesanan, reset password lewat email, serta masuk dengan Google |
 
 Ongkir Reguler Rp15.000 dan gratis untuk belanja minimal Rp300.000 setelah diskon. Ongkir Kilat Rp25.000.
 
 ### Panel Admin
 
 - Dashboard dengan grafik pendapatan bulanan dan ringkasan toko
-- Pengelolaan kategori, produk, voucher, pengguna, dan pesanan
+- Pengelolaan kategori, produk dengan unggah foto, voucher, pengguna, dan pesanan
+- Mencari pesanan lewat nomor, nama, email, atau username, lalu mengunduh hasilnya sebagai CSV
+- Membatasi pemakaian voucher per pengguna
 - Dashboard chatbot: cache, hit rate, penilaian pengguna, dan estimasi penghematan energi
 
 ### Keamanan
@@ -52,13 +55,16 @@ Ongkir Reguler Rp15.000 dan gratis untuk belanja minimal Rp300.000 setelah disko
 - Password wajib minimal 8 karakter, dan saat registrasi harus memuat huruf dan angka
 - Audit log untuk perubahan peran pengguna, perubahan status pesanan, dan penghapusan cache chatbot
 - Cookie sesi `Secure` otomatis aktif di production
+- Baris produk dan voucher terkunci saat checkout agar stok tidak terjual dua kali
+- Header keamanan: `X-Content-Type-Options`, `X-Frame-Options`, dan `Referrer-Policy`
 
 ## Chatbot AI
 
-Pembeli bisa bertanya soal harga, stok, rekomendasi produk, voucher, ongkir, dan metode pembayaran. Chatbot terhubung ke API apa pun yang kompatibel dengan format OpenAI.
+Pembeli bisa bertanya soal harga, stok, rekomendasi produk, voucher, ongkir, metode pembayaran, dan status pesanannya sendiri. Chatbot terhubung ke API apa pun yang kompatibel dengan format OpenAI.
 
 - **Jawaban dari data toko:** setiap panggilan AI membawa katalog, voucher aktif, dan aturan ongkir terbaru.
 - **Paham konteks:** chatbot membaca 8 pesan terakhir dan mengenali produk di halaman yang sedang dibuka.
+- **Lacak pesanan:** pembeli yang login bisa bertanya "pesananku sampai mana?". Server hanya mengambil pesanan milik akun itu, membuat tombol ke pesanannya, dan tidak menyimpan jawabannya di cache.
 - **Streaming:** teks jawaban muncul bertahap.
 - **Kartu produk:** produk yang disebut AI tampil dengan harga terkini dan tombol tambah ke keranjang.
 - **Batas topik:** filter server menolak hitungan dan tugas sekolah sebelum memanggil AI, sehingga token tidak terbuang.
@@ -119,6 +125,8 @@ erDiagram
     chatbot_messages ||--o{ chatbot_feedback : dinilai
 ```
 
+Data katalog yang jarang berubah tersimpan di cache selama 10 menit dan langsung diperbarui saat produk, kategori, voucher, atau ulasan berubah.
+
 Kode utama chatbot ada di `app/Services/ChatbotService.php`, dan perhitungan keranjang ada di `app/Support/CartCalculator.php`.
 
 ## Instalasi
@@ -156,7 +164,9 @@ CHATBOT_BASE_URL=https://api.openai.com/v1
 CHATBOT_MODEL=gpt-4o-mini
 ```
 
-Lalu buat tabel, isi data contoh, dan bangun aset:
+Untuk mengaktifkan **Masuk dengan Google**, buat OAuth Client tipe Web di [Google Cloud Console](https://console.cloud.google.com/apis/credentials), daftarkan redirect URI `http://127.0.0.1:8000/auth/google/callback`, lalu isi `GOOGLE_CLIENT_ID` dan `GOOGLE_CLIENT_SECRET`. Tombolnya tersembunyi selama keduanya kosong.
+
+Lalu buat tabel, isi data contoh, dan bangun aset. Seeder utama menolak jalan bila database sudah berisi pesanan, kecuali `SEED_RESET=true`, karena seeder itu menghapus semua pesanan. Untuk menambah ulasan contoh saja, jalankan `php artisan db:seed --class=DemoReviewSeeder`.
 
 ```bash
 php artisan migrate --seed
@@ -183,7 +193,7 @@ Panel admin ada di `/admin`. Ganti kedua password ini sebelum deploy ke server p
 php artisan test
 ```
 
-Test memakai SQLite in-memory dan AI palsu, jadi database development dan kuota API kamu aman. Saat ini ada 105 test yang mencakup autentikasi, alur belanja, panel admin, dan chatbot.
+Test memakai SQLite in-memory dan AI palsu, jadi database development dan kuota API kamu aman. Saat ini ada 172 test yang mencakup autentikasi, alur belanja, panel admin, dan chatbot.
 
 Untuk membandingkan kualitas dan kecepatan model AI, jalankan `php artisan chatbot:benchmark`. Perintah ini memanggil API asli dan memakai kuota.
 

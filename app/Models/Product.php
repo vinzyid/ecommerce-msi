@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\ExpiresChatbotCache;
+use App\Models\Concerns\RefreshesStoreCaches;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
-    use ExpiresChatbotCache, HasFactory;
+    use RefreshesStoreCaches, HasFactory;
 
     protected $fillable = [
         'category_id',
@@ -78,7 +78,9 @@ class Product extends Model
 
     public function averageRating(): ?float
     {
-        $average = $this->reviews()->where('is_approved', true)->avg('rating');
+        $average = $this->relationLoaded('reviews')
+            ? $this->reviews->where('is_approved', true)->avg('rating')
+            : $this->reviews()->where('is_approved', true)->avg('rating');
 
         return $average === null ? null : round((float) $average, 1);
     }

@@ -15,6 +15,11 @@
             'Ada yang lebih murah?' => "Ada produk mirip {$pageProduct->name} dengan harga lebih murah?",
             'Cocok untuk siapa?' => "{$pageProduct->name} cocok untuk kebutuhan seperti apa?",
         ],
+        request()->routeIs('orders.*') => [
+            'Pesananku sampai mana?' => 'Pesanan saya sudah sampai mana?',
+            'Nomor resi?' => 'Berapa nomor resi pesanan terbaru saya?',
+            'Cara membatalkan?' => 'Bagaimana cara membatalkan pesanan?',
+        ],
         request()->routeIs('cart.index', 'checkout.create') => [
             'Ada voucher?' => 'Ada voucher yang bisa saya pakai saat checkout?',
             'Ongkos kirim?' => 'Berapa ongkos kirim dan kapan gratis ongkir?',
@@ -29,7 +34,7 @@
             'Harga PS5?' => 'Berapa harga PlayStation 5?',
             'Sedang promo?' => 'Produk apa saja yang sedang promo?',
             'Rekomendasi headset' => 'Rekomendasi headset gaming yang stoknya tersedia',
-        ],
+        ] + (auth()->check() ? ['Cek pesananku' => 'Pesanan saya sudah sampai mana?'] : []),
     };
 @endphp
 <div data-chatbot

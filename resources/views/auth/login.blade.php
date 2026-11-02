@@ -45,11 +45,17 @@
                     </div>
                 </div>
 
+                <div class="text-right">
+                    <a href="{{ route('password.request') }}" class="text-sm font-medium text-brand-600 hover:underline">Lupa password?</a>
+                </div>
+
                 <button type="submit"
                         class="w-full rounded-full bg-ink-900 px-5 py-3 text-sm font-medium text-white hover:bg-ink-700">
                     Masuk
                 </button>
             </form>
+
+            @include('auth.partials.google-button')
 
             <p class="mt-5 text-center text-sm text-ink-500">
                 Belum punya akun?

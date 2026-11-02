@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ChatbotMessage;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\Voucher;
 use App\Support\CartCalculator;
@@ -25,7 +26,7 @@ class ChatbotService
      * Bila $onDelta diberikan, jawaban dikirim bertahap (streaming) lewat callback itu.
      *
      * @param  (callable(string): void)|null  $onDelta
-     * @return array{answer: string, cached: bool, blocked: bool, message_id: int|null, products: Collection<int, Product>}
+     * @return array{answer: string, cached: bool, blocked: bool, message_id: int|null, products: Collection<int, Product>, orders: Collection<int, Order>}
      */
     public function ask(
         string $question,
@@ -40,6 +41,14 @@ class ChatbotService
             $onDelta && $onDelta($rejection);
 
             return $this->result($rejection, blocked: true);
+        }
+
+        // Pertanyaan soal pesanan sendiri butuh akun, jadi tamu langsung diarahkan untuk masuk.
+        if ($userId === null && $this->asksAboutOwnOrder($question)) {
+            $message = 'Untuk mengecek pesanan, silakan [masuk](/login) ke akunmu dulu ya. Setelah itu kamu bisa tanya lagi di sini.';
+            $onDelta && $onDelta($message);
+
+            return $this->result($message);
         }
 
         // Bersihkan history: batasi 8 pesan terakhir & hanya role/content yang valid.
@@ -61,7 +70,13 @@ class ChatbotService
 
         // "Produk ini masih ada?" dari halaman produk A tidak boleh dijawab dari cache produk B.
         $usesPageContext = $pageProduct !== null && $this->isContextualFollowUp($question);
-        $skipCache = $isFollowUp || $usesPageContext;
+
+        // Data pesanan selalu diambil dari akun yang login, bukan dari isi percakapan.
+        $orderContext = $userId !== null && $this->needsOrderContext($question, $conversation)
+            ? $this->orderContext($userId, $question)
+            : null;
+
+        $skipCache = $isFollowUp || $usesPageContext || $orderContext !== null;
 
         $hash = ChatbotMessage::hashQuestion($question);
         $canonical = ChatbotMessage::canonicalKey($question);
@@ -92,15 +107,15 @@ class ChatbotService
             return $this->result($cached->answer, cached: true, messageId: $cached->id);
         }
 
-        $messages = $this->buildMessages($question, $conversation, $pageProduct);
+        $messages = $this->buildMessages($question, $conversation, $pageProduct, $orderContext);
         ['text' => $answer, 'complete' => $complete] = $onDelta
             ? $this->streamAi($messages, $onDelta)
             : $this->askAi($messages);
 
         // Cache dipakai bersama semua pengunjung, jadi hanya jawaban yang utuh dan murni dari
         // pertanyaan yang boleh disimpan. Riwayat dikirim oleh browser sehingga bisa dipalsukan.
-        if (! $complete || ! empty($conversation) || $pageProduct !== null) {
-            return $this->result($answer);
+        if (! $complete || ! empty($conversation) || $pageProduct !== null || $orderContext !== null) {
+            return $this->result($answer, orderOwnerId: $orderContext !== null ? $userId : null);
         }
 
         // Simpan / perbarui cache jawaban.
@@ -120,7 +135,7 @@ class ChatbotService
         return $this->result($answer, messageId: $entry->id);
     }
 
-    private function result(string $answer, bool $cached = false, bool $blocked = false, ?int $messageId = null): array
+    private function result(string $answer, bool $cached = false, bool $blocked = false, ?int $messageId = null, ?int $orderOwnerId = null): array
     {
         return [
             'answer' => $answer,
@@ -128,7 +143,26 @@ class ChatbotService
             'blocked' => $blocked,
             'message_id' => $messageId,
             'products' => $blocked ? collect() : $this->mentionedProducts($answer),
+            'orders' => $orderOwnerId !== null ? $this->mentionedOrders($answer, $orderOwnerId) : collect(),
         ];
+    }
+
+    /**
+     * Pesanan milik pengguna yang disebut di jawaban. Tombolnya dibuat di server, bukan oleh AI,
+     * agar tautannya selalu mengarah ke pesanan yang benar dan milik pengguna itu sendiri.
+     *
+     * @return Collection<int, Order>
+     */
+    private function mentionedOrders(string $answer, int $userId, int $limit = 5): Collection
+    {
+        return Order::query()
+            ->where('user_id', $userId)
+            ->latest('ordered_at')
+            ->get(['id', 'order_number', 'status'])
+            ->filter(fn (Order $order) => mb_stripos($answer, $order->order_number) !== false)
+            ->sortBy(fn (Order $order) => mb_stripos($answer, $order->order_number))
+            ->take($limit)
+            ->values();
     }
 
     /**
@@ -208,6 +242,77 @@ class ChatbotService
     }
 
     /**
+     * Apakah pengguna menanyakan pesanannya sendiri ("pesananku sampai mana?", "cek resi")?
+     */
+    private function asksAboutOwnOrder(string $text): bool
+    {
+        return preg_match(
+            '/\b(pesanan|orderan|order|paket|barang|kiriman)\s*(saya|ku|aku|gue|gw|kami)\b'
+            .'|\b(pesananku|orderanku|paketku|barangku|kirimanku)\b'
+            .'|\b(status|lacak|cek|tracking|track)\b.{0,25}\b(pesanan|orderan|order|paket|kiriman|resi)\b'
+            .'|\b(sampai mana|sudah sampai|udah sampai|sudah dikirim|udah dikirim|kapan sampai|nomor resi|no resi)\b'
+            .'|\b[a-z]{3}-\d{6}-[a-z0-9]{6}\b/iu',
+            $text
+        ) === 1;
+    }
+
+    /**
+     * @param  array<int, array{role: string, content: string}>  $conversation
+     */
+    private function needsOrderContext(string $question, array $conversation): bool
+    {
+        if ($this->asksAboutOwnOrder($question) || preg_match('/\b(pesanan|resi)\b/iu', $question)) {
+            return true;
+        }
+
+        // Lanjutan singkat seperti "kalau yang kedua?" setelah membahas pesanan.
+        $recent = collect($conversation)->slice(-2)->pluck('content')->implode(' ');
+
+        return $this->isContextualFollowUp($question) && preg_match('/\b(pesanan|resi)\b/iu', $recent) === 1;
+    }
+
+    /**
+     * Ringkasan pesanan milik pengguna sebagai konteks AI. Alamat, telepon, dan catatan
+     * sengaja tidak disertakan karena tidak diperlukan untuk menjawab status pesanan.
+     */
+    private function orderContext(int $userId, string $question): string
+    {
+        $requested = preg_match_all('/\b[a-z]{3}-\d{6}-[a-z0-9]{6}\b/iu', $question, $matches)
+            ? array_map('strtoupper', $matches[0])
+            : [];
+
+        $orders = Order::query()
+            ->with('items')
+            ->where('user_id', $userId)
+            ->latest('ordered_at')
+            ->limit(5)
+            ->get()
+            ->merge(
+                Order::query()->with('items')->where('user_id', $userId)->whereIn('order_number', $requested)->get()
+            )
+            ->unique('id');
+
+        $rules = 'Jawab HANYA dari data ini. Pengguna hanya boleh tahu pesanan di daftar ini; jika nomor yang ditanya tidak ada, katakan pesanan itu tidak ditemukan di akunnya. '
+            .'Jangan mengarang estimasi tiba atau lokasi paket. JANGAN menulis tautan pesanan: tulis nomor pesanan persis seperti di daftar, sistem otomatis menampilkan tombol untuk nomor yang kamu sebut.';
+
+        if ($orders->isEmpty()) {
+            return "PESANAN PENGGUNA YANG SEDANG LOGIN: belum ada pesanan. {$rules}";
+        }
+
+        $lines = $orders->map(function (Order $order) {
+            $items = $order->items->map(fn ($item) => "{$item->quantity}x {$item->product_name}")->implode(', ');
+            $total = 'Rp'.number_format((float) $order->total, 0, ',', '.');
+            $shipping = $order->tracking_number ? ", kurir {$order->courier}, resi {$order->tracking_number}" : ', belum ada resi';
+            $expired = $order->payment_method === 'qris' && $order->status === 'pending' && $order->isQrisExpired() ? ', kode QR sudah kedaluwarsa' : '';
+
+            return "- {$order->order_number}, dipesan {$order->ordered_at->translatedFormat('d F Y')}: "
+                ."status {$order->statusLabel()}, bayar {$order->paymentLabel()} ({$order->paymentStatusLabel()}{$expired}), total {$total}{$shipping}. Isi: {$items}.";
+        })->implode("\n");
+
+        return "PESANAN PENGGUNA YANG SEDANG LOGIN (maksimal 5 terbaru). {$rules}\n{$lines}";
+    }
+
+    /**
      * Guard server-side: deteksi pertanyaan yang jelas di luar konteks toko.
      * Menghemat token & memastikan AI tidak menjawab hal seperti matematika,
      * tugas sekolah, coding, dsb. Mengembalikan pesan penolakan atau null.
@@ -278,9 +383,13 @@ class ChatbotService
      * @param  array<int, array{role: string, content: string}>  $conversation
      * @return array<int, array{role: string, content: string}>
      */
-    private function buildMessages(string $question, array $conversation, ?Product $pageProduct): array
+    private function buildMessages(string $question, array $conversation, ?Product $pageProduct, ?string $orderContext = null): array
     {
         $system = [['role' => 'system', 'content' => $this->systemPrompt()]];
+
+        if ($orderContext !== null) {
+            $system[] = ['role' => 'system', 'content' => $orderContext];
+        }
 
         if ($pageProduct) {
             $price = 'Rp'.number_format((float) $pageProduct->price, 0, ',', '.');
@@ -478,7 +587,7 @@ class ChatbotService
 
         ATURAN INFO BELANJA:
         - Jawab pertanyaan ongkir, pembayaran, dan voucher HANYA berdasarkan INFO BELANJA di bawah. Jangan mengarang.
-        - Jika informasinya tidak tertulis (misal estimasi tiba, nama kurir, garansi, retur), katakan dengan sopan bahwa kamu belum punya informasi tersebut.
+        - Jika informasinya tidak tertulis (misal estimasi tiba, nama kurir, garansi), katakan dengan sopan bahwa kamu belum punya informasi tersebut.
 
         ATURAN MEMORI PERCAKAPAN (SANGAT PENTING — JANGAN LUPA KONTEKS):
         - Kamu HARUS mengingat dan menyambung pembicaraan sebelumnya. Baca riwayat percakapan yang diberikan.
@@ -507,7 +616,7 @@ class ChatbotService
 
         - Gunakan **teks tebal** untuk nama produk/label, dan tanda "- " untuk daftar.
         - Tulis nama produk PERSIS seperti di DATA PRODUK (huruf & angka sama), karena sistem otomatis menampilkan kartu produk yang namanya kamu sebut.
-        - Boleh menautkan halaman toko dengan format [teks](/alamat), HANYA untuk: /promo, /kategori, /cart, /checkout, /orders. Jangan membuat tautan lain.
+        - Boleh menautkan halaman toko dengan format [teks](/alamat), HANYA untuk: /promo, /kategori, /cart, /checkout, /orders, /retur. Jangan membuat tautan lain.
         - Maksimal 4-5 poin per produk agar ringkas.
 
         GAYA:
@@ -539,9 +648,10 @@ class ChatbotService
             ->map(function (Voucher $voucher) use ($rupiah) {
                 $value = $voucher->type === 'fixed' ? $rupiah($voucher->value) : "{$voucher->value}%";
                 $maxDiscount = $voucher->max_discount !== null ? " (maks. {$rupiah($voucher->max_discount)})" : '';
+                $perUser = $voucher->per_user_limit !== null ? ", maks. {$voucher->per_user_limit}x per akun" : '';
                 $expiresAt = $voucher->expires_at ? ", berlaku sampai {$voucher->expires_at->translatedFormat('d F Y')}" : '';
 
-                return "- {$voucher->code}: diskon {$value}{$maxDiscount}, minimal belanja {$rupiah($voucher->min_spend)}{$expiresAt}.";
+                return "- {$voucher->code}: diskon {$value}{$maxDiscount}, minimal belanja {$rupiah($voucher->min_spend)}{$perUser}{$expiresAt}.";
             })
             ->implode("\n");
 
@@ -554,6 +664,8 @@ class ChatbotService
             '- Transfer Bank (Virtual Account)',
             '- QRIS',
             '- Bayar di Tempat (COD)',
+            'Pembatalan: bisa dilakukan pembeli selama status pesanan Menunggu atau Diproses.',
+            'Retur: barang rusak atau tidak sesuai bisa diajukan untuk diganti maksimal 7 hari setelah diterima, lihat /retur.',
             'Voucher aktif (kode dimasukkan di halaman keranjang atau checkout):',
             $vouchers !== '' ? $vouchers : '- Belum ada voucher aktif.',
         ]);

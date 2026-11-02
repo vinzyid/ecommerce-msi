@@ -160,7 +160,7 @@
                                     {{ $shippingCost === 0 ? 'Bebas Ongkir' : 'Rp15.000' }}
                                 </span>
                             </div>
-                            <p class="mt-1 text-xs text-ink-500">Estimasi tiba 2–4 hari kerja &bull; Kurir: JNE, SiCepat, atau J&amp;T Express.</p>
+                            <p class="mt-1 text-xs text-ink-500">Kurir: JNE Regular.</p>
                         </div>
                     </label>
 
@@ -303,7 +303,7 @@
                     </p>
                     <p class="flex items-center justify-center gap-1.5">
                         <svg class="h-3.5 w-3.5 text-brand-600"><use href="#i-shield"/></svg>
-                        Jaminan garansi uang kembali 7 hari
+                        Mode demo, tanpa uang sungguhan
                     </p>
                 </div>
                 <a href="{{ route('cart.index') }}" class="mt-3 block text-center text-sm font-semibold text-ink-500 hover:text-brand-700">&larr; Kembali ke keranjang</a>

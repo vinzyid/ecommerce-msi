@@ -57,10 +57,10 @@
                 @endforeach
             </nav>
 
-            <form method="GET" action="{{ route('home') }}" role="search" class="relative ml-auto hidden w-full max-w-xs md:block lg:max-w-sm">
+            <form method="GET" action="{{ route('home') }}" role="search" data-search-form data-suggest-url="{{ route('search.suggest') }}" class="relative ml-auto hidden w-full max-w-xs md:block lg:max-w-sm">
                 <label class="sr-only" for="site-search">Cari produk</label>
                 <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" aria-hidden="true"><use href="#i-search"/></svg>
-                <input id="site-search" name="q" type="search" value="{{ request('q') }}"
+                <input id="site-search" name="q" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" value="{{ request('q') }}"
                        placeholder="Cari produk"
                        class="w-full rounded-full border border-transparent bg-ink-50 py-2 pl-10 pr-4 text-sm outline-none transition placeholder:text-ink-400 focus:border-ink-200 focus:bg-white focus:ring-4 focus:ring-ink-100">
             </form>
@@ -126,11 +126,11 @@
             </div>
         </div>
 
-        <form method="GET" action="{{ route('home') }}" role="search" class="pb-3 md:hidden">
+        <form method="GET" action="{{ route('home') }}" role="search" data-search-form data-suggest-url="{{ route('search.suggest') }}" class="pb-3 md:hidden">
             <label class="sr-only" for="site-search-mobile">Cari produk</label>
-            <div class="relative">
+            <div class="relative" data-search-anchor>
                 <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" aria-hidden="true"><use href="#i-search"/></svg>
-                <input id="site-search-mobile" name="q" type="search" value="{{ request('q') }}"
+                <input id="site-search-mobile" name="q" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-autocomplete="list" value="{{ request('q') }}"
                        placeholder="Cari produk gaming, diecast, hobi"
                        class="w-full rounded-full border border-transparent bg-ink-50 py-2.5 pl-10 pr-4 text-base outline-none placeholder:text-ink-400 focus:border-ink-200 focus:bg-white focus:ring-4 focus:ring-ink-100">
             </div>
@@ -191,8 +191,8 @@
         @foreach ([
             ['i-shield', '100% original', 'Garansi resmi distributor & brand.'],
             ['i-truck', 'Gratis ongkir', 'Untuk belanja min. Rp300.000.'],
-            ['i-refresh', 'Retur 7 hari', 'Barang rusak atau salah, kami ganti.'],
-            ['i-headset', 'Bantuan 24/7', 'Asisten AI dan tim kami siap membantu.'],
+            ['i-refresh', 'Retur 7 hari', 'Barang rusak atau salah bisa diajukan untuk diganti.'],
+            ['i-headset', 'Asisten toko', 'Tanya harga, stok, dan cara belanja lewat chat.'],
         ] as [$icon, $title, $desc])
             <div class="flex items-start gap-3">
                 <svg class="mt-0.5 h-5 w-5 shrink-0 text-ink-900" aria-hidden="true"><use href="#{{ $icon }}"/></svg>
@@ -231,9 +231,9 @@
             <nav class="mt-4 space-y-2.5 text-xs text-ink-500">
                 <a href="{{ route('about') }}" class="block hover:text-ink-900">Tentang {{ config('app.name') }}</a>
                 <a href="{{ route('promo') }}" class="block hover:text-ink-900">Promo &amp; voucher</a>
-                <a href="{{ route('about') }}" class="block hover:text-ink-900">Syarat &amp; ketentuan</a>
-                <a href="{{ route('about') }}" class="block hover:text-ink-900">Kebijakan privasi</a>
-                <a href="{{ route('about') }}" class="block hover:text-ink-900">Pembayaran &amp; retur</a>
+                <a href="{{ route('pages.terms') }}" class="block hover:text-ink-900">Syarat &amp; ketentuan</a>
+                <a href="{{ route('pages.privacy') }}" class="block hover:text-ink-900">Kebijakan privasi</a>
+                <a href="{{ route('pages.returns') }}" class="block hover:text-ink-900">Pembayaran &amp; retur</a>
             </nav>
         </div>
 

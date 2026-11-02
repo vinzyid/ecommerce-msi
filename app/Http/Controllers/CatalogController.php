@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Voucher;
+use App\Support\CatalogCache;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -17,6 +19,8 @@ class CatalogController extends Controller
             'q' => 'nullable|string|max:100',
             'category' => 'nullable|string|max:100',
             'sort' => 'nullable|string|in:featured,latest,price_asc,price_desc',
+            'min_price' => 'nullable|integer|min:0',
+            'max_price' => 'nullable|integer|min:0',
         ]);
 
         $sort = $filters['sort'] ?? 'featured';
@@ -26,6 +30,8 @@ class CatalogController extends Controller
             ->when($filters['category'] ?? null, function (Builder $query, string $slug) {
                 $query->whereHas('category', fn (Builder $query) => $query->where('slug', $slug));
             })
+            ->when($filters['min_price'] ?? null, fn (Builder $query, int|string $price) => $query->where('price', '>=', $price))
+            ->when($filters['max_price'] ?? null, fn (Builder $query, int|string $price) => $query->where('price', '<=', $price))
             ->when($sort === 'latest', fn ($q) => $q->latest('id'))
             ->when($sort === 'price_asc', fn ($q) => $q->orderBy('price', 'asc'))
             ->when($sort === 'price_desc', fn ($q) => $q->orderBy('price', 'desc'))
@@ -33,21 +39,21 @@ class CatalogController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $categories = Category::query()
+        $categories = CatalogCache::remember('home.categories', fn () => Category::query()
             ->where('is_active', true)
             ->withCount(['products' => fn (Builder $query) => $query->where('is_active', true)])
             ->orderBy('name')
-            ->get();
+            ->get());
 
-        $featuredProducts = $this->productQuery()
+        $featuredProducts = CatalogCache::remember('home.featured', fn () => $this->productQuery()
             ->where('is_featured', true)
             ->orderBy('name')
             ->limit(4)
-            ->get();
+            ->get());
 
         // Flash sale harian: urutan acak yang ditentukan tanggal (bukan random per request),
         // jadi daftarnya sama sepanjang hari dan benar-benar berganti setiap tengah malam (WIB).
-        $flashSaleProducts = $this->productQuery()
+        $flashSaleProducts = CatalogCache::remember('home.flash-sale.'.now()->format('Y-m-d'), fn () => $this->productQuery()
             ->whereNotNull('compare_at_price')
             ->whereColumn('compare_at_price', '>', 'price')
             ->where('stock', '>', 0)
@@ -58,17 +64,20 @@ class CatalogController extends Controller
             ->sortBy(fn (Product $product) => crc32($product->id.'|'.now()->format('Y-m-d')))
             ->take(6)
             ->sortByDesc(fn (Product $product) => $product->discountPercent())
-            ->values();
+            ->values());
         $flashSaleEndsAt = now()->endOfDay();
 
-        $vouchers = Voucher::query()
+        // Saring di sini juga karena voucher bisa kedaluwarsa tanpa ada data yang berubah.
+        $vouchers = CatalogCache::remember('home.vouchers', fn () => Voucher::query()
             ->where('is_active', true)
             ->orderBy('min_spend')
-            ->limit(4)
-            ->get();
+            ->get())
+            ->filter(fn (Voucher $voucher) => $voucher->isUsable())
+            ->take(4)
+            ->values();
 
         $heroProduct = $featuredProducts->firstWhere('image_url', '!=', null) ?? $featuredProducts->first();
-        $categoryCovers = $this->categoryCovers();
+        $categoryCovers = CatalogCache::remember('home.covers', fn () => $this->categoryCovers());
         $heroSlides = $this->heroSlides($heroProduct, $categories, $flashSaleProducts);
         $wishlistedProductIds = $this->wishlistedIds(
             $products->getCollection()
@@ -213,6 +222,35 @@ class CatalogController extends Controller
         return auth()->user()->wishlists()->whereIn('product_id', $ids)->pluck('product_id')->all();
     }
 
+    /**
+     * Saran produk saat pengguna mengetik di kolom pencarian.
+     */
+    public function suggest(Request $request): JsonResponse
+    {
+        $query = trim((string) ($request->validate(['q' => 'nullable|string|max:100'])['q'] ?? ''));
+
+        if (mb_strlen($query) < 2) {
+            return response()->json(['suggestions' => []]);
+        }
+
+        $products = Product::query()
+            ->where('is_active', true)
+            ->whereHas('category', fn (Builder $query) => $query->where('is_active', true))
+            ->tap(fn (Builder $builder) => $this->applySearch($builder, $query))
+            ->orderByDesc('is_featured')
+            ->orderBy('name')
+            ->limit(6)
+            ->get(['id', 'name', 'slug', 'image_url']);
+
+        return response()->json([
+            'suggestions' => $products->map(fn (Product $product) => [
+                'name' => $product->name,
+                'url' => route('products.show', $product),
+                'image_url' => $product->image_url,
+            ])->all(),
+        ]);
+    }
+
     public function show(Product $product): View
     {
         abort_unless($product->is_active && $product->category->is_active, 404);
@@ -226,7 +264,14 @@ class CatalogController extends Controller
             ->limit(4)
             ->get();
 
-        $wishlistedProductIds = $this->wishlistedIds($relatedProducts);
+        $storeProducts = CatalogCache::remember("product.{$product->id}.store-others", fn () => $this->productQuery()
+            ->where('category_id', '!=', $product->category_id)
+            ->orderByDesc('is_featured')
+            ->orderBy('name')
+            ->limit(4)
+            ->get());
+
+        $wishlistedProductIds = $this->wishlistedIds($relatedProducts->concat($storeProducts));
 
         $ratingBreakdown = collect(range(5, 1))->mapWithKeys(fn (int $star) => [
             $star => $product->reviews->where('rating', $star)->count(),
@@ -244,6 +289,7 @@ class CatalogController extends Controller
         return view('catalog.show', compact(
             'product',
             'relatedProducts',
+            'storeProducts',
             'ratingBreakdown',
             'isWishlisted',
             'userReview',

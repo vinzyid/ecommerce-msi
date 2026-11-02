@@ -1,4 +1,21 @@
-{{-- Urutan + grid produk + paginasi; dipakai beranda dan mode hasil pencarian/kategori --}}
+{{-- Filter harga + urutan + grid produk + paginasi; dipakai beranda dan mode hasil pencarian/kategori --}}
+<form method="GET" action="{{ route('home') }}#produk" class="mt-6 flex flex-wrap items-end gap-2">
+    @foreach (array_filter(['q' => request('q'), 'category' => request('category'), 'sort' => request('sort')]) as $name => $value)
+        <input type="hidden" name="{{ $name }}" value="{{ $value }}">
+    @endforeach
+    <div>
+        <label for="min_price" class="block text-xs text-ink-500">Harga minimum</label>
+        <input id="min_price" name="min_price" type="number" min="0" step="1000" value="{{ request('min_price') }}" placeholder="Rp0"
+               class="mt-1 w-32 rounded-full border border-ink-200 px-3.5 py-1.5 text-base outline-none focus:border-ink-400 sm:text-xs">
+    </div>
+    <div>
+        <label for="max_price" class="block text-xs text-ink-500">Harga maksimum</label>
+        <input id="max_price" name="max_price" type="number" min="0" step="1000" value="{{ request('max_price') }}" placeholder="Rp10.000.000"
+               class="mt-1 w-32 rounded-full border border-ink-200 px-3.5 py-1.5 text-base outline-none focus:border-ink-400 sm:text-xs">
+    </div>
+    <button type="submit" class="rounded-full border border-ink-900 px-3.5 py-1.5 text-xs font-medium text-ink-900 hover:bg-ink-900 hover:text-white">Terapkan</button>
+</form>
+
 @if ($products->isNotEmpty())
     <div class="no-scrollbar -mx-4 mt-6 flex items-center gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
         <span class="shrink-0 text-xs text-ink-500">Urutkan</span>

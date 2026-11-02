@@ -6,6 +6,7 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Voucher;
+use App\Notifications\OrderPlaced;
 use App\Support\CartCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class CheckoutController extends Controller
 {
@@ -120,8 +122,11 @@ class CheckoutController extends Controller
         $voucherCode = $request->session()->get('voucher_code');
 
         $order = DB::transaction(function () use ($cartItems, $user, $validated, $voucherCode, $request) {
+            // Kunci baris produk agar dua checkout bersamaan tidak menjual stok yang sama.
             $products = Product::query()
                 ->whereIn('id', $cartItems->pluck('product_id'))
+                ->orderBy('id')
+                ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
 
@@ -140,14 +145,17 @@ class CheckoutController extends Controller
             }
 
             $voucher = $voucherCode
-                ? Voucher::query()->where('code', $voucherCode)->first()
+                ? Voucher::query()->where('code', $voucherCode)->lockForUpdate()->first()
                 : null;
 
             $discount = 0;
 
-            if ($voucher && $voucher->isUsable()) {
+            if ($voucher && $voucher->isUsableBy($user)) {
                 $discount = $voucher->discountFor($subtotal);
-            } else {
+            }
+
+            // Voucher tanpa potongan (mis. belanja di bawah minimum) tidak boleh menghabiskan kuota.
+            if ($discount === 0) {
                 $voucher = null;
             }
 
@@ -207,6 +215,13 @@ class CheckoutController extends Controller
         $this->rememberAddress($user, $validated);
 
         $request->session()->forget(['voucher_code', 'shipping_method']);
+
+        // Pesanan sudah tersimpan, jadi email yang gagal terkirim tidak boleh menggagalkan checkout.
+        try {
+            $user->notify(new OrderPlaced($order));
+        } catch (Throwable $e) {
+            report($e);
+        }
 
         return redirect()->route('orders.show', $order)->with('success', 'Pesanan berhasil dibuat.');
     }

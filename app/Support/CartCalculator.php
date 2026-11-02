@@ -35,7 +35,7 @@ class CartCalculator
 
         $discount = 0;
 
-        if ($voucher && $voucher->isUsable()) {
+        if ($voucher && $voucher->isUsableBy($user)) {
             $discount = $voucher->discountFor($subtotal);
         } else {
             $voucher = null;

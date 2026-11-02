@@ -75,6 +75,8 @@
                 </button>
             </form>
 
+            @include('auth.partials.google-button')
+
             <p class="mt-5 text-center text-sm text-ink-500">
                 Sudah punya akun?
                 <a href="{{ route('login') }}" class="font-medium text-brand-600 hover:underline">Masuk</a>

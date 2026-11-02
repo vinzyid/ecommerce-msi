@@ -64,8 +64,19 @@
             </div>
         @endif
 
+        @if ($errors->has('review') || $errors->has('items.*') || $errors->has('reorder'))
+            <p class="mt-4 rounded-xl bg-danger-500/10 px-4 py-3 text-sm text-danger-600" role="alert">{{ $errors->first() }}</p>
+        @endif
+
         <div class="mt-6 grid gap-5 lg:grid-cols-[1fr_320px]">
             <section class="space-y-5">
+                @if ($order->status === 'cancelled')
+                    <div class="rounded-2xl border border-danger-500/20 bg-danger-500/5 p-4 text-xs text-ink-700">
+                        <strong class="font-bold text-danger-600">Pesanan dibatalkan</strong>
+                        <p class="mt-0.5">Stok barang dan kuota voucher sudah dikembalikan.</p>
+                    </div>
+                @endif
+
                 {{-- Kartu Instruksi Pembayaran (Tokopedia / Shopee Style) --}}
                 @if (in_array($order->payment_method, ['bank_transfer', 'transfer']) && $order->status === 'pending')
                     <div class="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50/80 to-white p-5 shadow-card">
@@ -144,7 +155,7 @@
                         </div>
 
                         @if ($order->isQrisExpired())
-                            <p class="mt-4 rounded-xl bg-amber-50 p-3.5 text-xs text-amber-800">Pesanan ini tidak bisa dibayar lagi. Silakan buat pesanan baru.</p>
+                            <p class="mt-4 rounded-xl bg-amber-50 p-3.5 text-xs text-amber-800">Pesanan ini tidak bisa dibayar lagi. Batalkan pesanan ini lalu buat pesanan baru.</p>
                         @else
                             <div class="mt-4 flex justify-center rounded-xl border border-brand-200/70 bg-white p-4" role="img" aria-label="Kode QR simulasi untuk pesanan {{ $order->order_number }}">
                                 {!! $order->qrisQrSvg() !!}
@@ -177,7 +188,7 @@
                             </span>
                             <div>
                                 <h3 class="text-sm font-bold text-emerald-800">Pembayaran {{ $order->payment_method === 'qris' ? 'QRIS' : 'Virtual Account' }} Berhasil</h3>
-                                <p class="text-xs text-emerald-700">Pesanan Anda sudah LUNAS dan sedang diproses penjual.</p>
+                                <p class="text-xs text-emerald-700">{{ match ($order->status) { 'processing' => 'Pesanan Anda sudah LUNAS dan sedang diproses penjual.', 'shipped' => 'Pesanan Anda sudah LUNAS dan sedang dalam pengiriman.', default => 'Pesanan Anda sudah LUNAS.' } }}</p>
                             </div>
                         </div>
 
@@ -196,7 +207,7 @@
                             </div>
                         </dl>
                     </div>
-                @elseif ($order->payment_method === 'cod')
+                @elseif ($order->payment_method === 'cod' && $order->status !== 'cancelled')
                     <div class="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
                             <svg class="h-5 w-5"><use href="#i-truck"/></svg>
@@ -206,7 +217,80 @@
                             <p class="mt-0.5 text-amber-700">Siapkan uang pas sejumlah <b>Rp{{ number_format($order->total, 0, ',', '.') }}</b> saat kurir menyerahkan paket ke alamatmu.</p>
                         </div>
                     </div>
+                    @if ($order->status === 'pending')
+                        <form method="POST" action="{{ route('orders.simulatePayment', $order) }}">
+                            @csrf
+                            <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700">
+                                <svg class="h-4.5 w-4.5"><use href="#i-check-circle"/></svg>
+                                Konfirmasi Pesanan COD (Simulasi)
+                            </button>
+                        </form>
+                    @endif
                 @endif
+
+                {{-- Toko & barang --}}
+                <div class="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-ink-100 pb-3">
+                        <div class="flex min-w-0 items-center gap-2">
+                            <x-logo :wordmark="false" class="[&>svg]:h-6 [&>svg]:w-6" />
+                            <h2 class="truncate text-sm font-semibold text-ink-900">{{ config('app.name') }}</h2>
+                        </div>
+                        <a href="{{ route('home') }}" class="text-xs font-medium text-brand-600 hover:underline">Kunjungi Toko</a>
+                    </div>
+
+                    <div class="divide-y divide-ink-100">
+                        @foreach ($order->items as $item)
+                            <div class="flex gap-3 py-3">
+                                @if ($item->product)
+                                    <a href="{{ route('products.show', $item->product) }}" class="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-ink-50 text-xs font-semibold text-ink-400" tabindex="-1" aria-hidden="true">
+                                        @if ($item->product->image_url)
+                                            <img src="{{ $item->product->image_url }}" alt="" loading="lazy" class="h-full w-full object-contain p-1 mix-blend-multiply">
+                                        @else
+                                            {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($item->product_name, 0, 2)) }}
+                                        @endif
+                                    </a>
+                                @else
+                                    <span class="grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-ink-50 text-xs font-semibold text-ink-400">{{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($item->product_name, 0, 2)) }}</span>
+                                @endif
+                                <div class="min-w-0 flex-1">
+                                    @if ($item->product)
+                                        <a href="{{ route('products.show', $item->product) }}" class="line-clamp-2 text-sm font-medium text-ink-900 hover:text-brand-700">{{ $item->product_name }}</a>
+                                    @else
+                                        <p class="line-clamp-2 text-sm font-medium text-ink-900">{{ $item->product_name }}</p>
+                                    @endif
+                                    <p class="mt-0.5 text-xs text-ink-400">{{ $item->sku }}</p>
+                                    <p class="mt-0.5 text-xs text-ink-500">{{ $item->quantity }} &times; Rp{{ number_format($item->price, 0, ',', '.') }}</p>
+                                    @if ($reviews->has($item->product_id))
+                                        <p class="mt-1 text-xs font-medium text-amber-600">&#9733; {{ $reviews->get($item->product_id)->rating }} &middot; Sudah dinilai</p>
+                                    @endif
+                                </div>
+                                <p class="shrink-0 text-sm font-semibold tabular-nums text-ink-900">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <dl class="mt-4 space-y-2.5 border-t border-ink-100 pt-4 text-sm">
+                        <div class="flex justify-between">
+                            <dt class="text-ink-500">Subtotal</dt>
+                            <dd class="font-semibold text-ink-800">Rp{{ number_format($order->subtotal, 0, ',', '.') }}</dd>
+                        </div>
+                        @if ((int) $order->discount > 0)
+                            <div class="flex justify-between text-success-600">
+                                <dt class="font-semibold">Diskon {{ $order->voucher_code }}</dt>
+                                <dd class="font-bold">-Rp{{ number_format($order->discount, 0, ',', '.') }}</dd>
+                            </div>
+                        @endif
+                        <div class="flex justify-between">
+                            <dt class="text-ink-500">Ongkir</dt>
+                            <dd class="font-semibold text-ink-800">{{ (int) $order->shipping_cost === 0 ? 'Gratis' : 'Rp'.number_format($order->shipping_cost, 0, ',', '.') }}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="mt-4 flex items-end justify-between border-t border-ink-100 pt-4">
+                        <span class="text-sm font-semibold text-ink-600">Total</span>
+                        <strong class="text-xl font-semibold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</strong>
+                    </div>
+                </div>
 
                 {{-- Aksi Tahapan Pesanan (Demo Pemrosesan & Pengiriman) --}}
                 @if ($order->status === 'processing')
@@ -259,7 +343,7 @@
                             </span>
                             <div class="min-w-0 flex-1">
                                 <p class="text-sm font-bold text-emerald-800">Pesanan Selesai! ⭐</p>
-                                <p class="mt-0.5 text-xs text-emerald-700">Terima kasih telah berbelanja. Bagikan pengalamanmu dengan menulis ulasan produk yang sudah diterima.</p>
+                                <p class="mt-0.5 text-xs text-emerald-700">Terima kasih telah berbelanja. Bagikan pengalamanmu dengan menilai barang yang sudah diterima.</p>
                             </div>
                         </div>
                     </div>
@@ -276,7 +360,7 @@
                                 </span>
                                 <div>
                                     <h2 class="text-sm font-bold">Lacak Pengiriman</h2>
-                                    <p class="text-[11px] text-white/80">Status paket real-time</p>
+                                    <p class="text-[11px] text-white/80">Riwayat perjalanan paket</p>
                                 </div>
                             </div>
                             @if ($order->tracking_number)
@@ -333,50 +417,6 @@
                         </ol>
                     </div>
                 @endif
-
-                    <div class="divide-y divide-ink-100">
-                        @foreach ($order->items as $item)
-                            <div class="flex items-center gap-4 py-3">
-                                <div class="min-w-0 flex-1">
-                                    <div class="text-[11px] font-semibold uppercase tracking-wide text-ink-400">{{ $item->sku }}</div>
-                                    <div class="truncate text-sm font-bold text-ink-900">{{ $item->product_name }}</div>
-                                    <div class="mt-0.5 text-xs text-ink-500">{{ $item->quantity }} &times; Rp{{ number_format($item->price, 0, ',', '.') }}</div>
-                                </div>
-                                <div class="text-right">
-                                    <b class="block text-sm font-semibold text-ink-900">Rp{{ number_format($item->subtotal, 0, ',', '.') }}</b>
-                                    @if ($order->status === 'completed' && $item->product)
-                                        <a href="{{ route('products.show', $item->product) }}#ulasan"
-                                           class="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-brand-600 hover:text-brand-700">
-                                            Beri Ulasan &rarr;
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    <dl class="mt-4 space-y-2.5 border-t border-ink-100 pt-4 text-sm">
-                        <div class="flex justify-between">
-                            <dt class="text-ink-500">Subtotal</dt>
-                            <dd class="font-semibold text-ink-800">Rp{{ number_format($order->subtotal, 0, ',', '.') }}</dd>
-                        </div>
-                        @if ((int) $order->discount > 0)
-                            <div class="flex justify-between text-success-600">
-                                <dt class="font-semibold">Diskon {{ $order->voucher_code }}</dt>
-                                <dd class="font-bold">-Rp{{ number_format($order->discount, 0, ',', '.') }}</dd>
-                            </div>
-                        @endif
-                        <div class="flex justify-between">
-                            <dt class="text-ink-500">Ongkir</dt>
-                            <dd class="font-semibold text-ink-800">{{ (int) $order->shipping_cost === 0 ? 'Gratis' : 'Rp'.number_format($order->shipping_cost, 0, ',', '.') }}</dd>
-                        </div>
-                    </dl>
-
-                    <div class="mt-4 flex items-end justify-between border-t border-ink-100 pt-4">
-                        <span class="text-sm font-semibold text-ink-600">Total</span>
-                        <strong class="text-xl font-semibold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</strong>
-                    </div>
-                </div>
             </section>
 
             <aside class="h-fit rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
@@ -410,11 +450,43 @@
                     @endif
                 </dl>
 
+                @php
+                    $reviewable = $isBuyer && $order->status === 'completed' ? $order->items->filter(fn ($item) => $item->product) : collect();
+                    $hasUnreviewed = $reviewable->contains(fn ($item) => ! $reviews->has($item->product_id));
+                @endphp
+                @if ($reviewable->isNotEmpty())
+                    <button type="button" onclick="document.getElementById('review-order-{{ $order->id }}').showModal()"
+                            class="mt-5 w-full rounded-xl bg-ink-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-ink-700">
+                        {{ $hasUnreviewed ? 'Beri Ulasan' : 'Ubah Ulasan' }}
+                    </button>
+                @endif
+
+                @if ($isBuyer && in_array($order->status, ['completed', 'cancelled'], true))
+                    <form method="POST" action="{{ route('orders.reorder', $order) }}" class="mt-2.5">
+                        @csrf
+                        <button type="submit" class="w-full rounded-xl border border-ink-200 px-4 py-2.5 text-sm font-semibold text-ink-800 transition hover:border-ink-900">Beli Lagi</button>
+                    </form>
+                @endif
+
+                @if ($order->isCancellable())
+                    <form method="POST" action="{{ route('orders.cancel', $order) }}" class="mt-5"
+                          onsubmit="return confirm('Batalkan pesanan ini? Stok dan voucher akan dikembalikan.');">
+                        @csrf
+                        <button type="submit" class="w-full rounded-xl border border-danger-500/40 px-4 py-2.5 text-sm font-semibold text-danger-600 transition hover:bg-danger-500/5">
+                            Batalkan Pesanan
+                        </button>
+                    </form>
+                @endif
+
                 <a href="{{ route('orders.index') }}" class="mt-5 block rounded-xl border border-ink-200 px-4 py-2.5 text-center text-sm font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700">
                     &larr; Semua pesanan
                 </a>
             </aside>
         </div>
+
+        @if ($reviewable->isNotEmpty())
+            @include('orders.partials.review-dialog', ['order' => $order, 'reviews' => $reviews])
+        @endif
     </div>
 </div>
 @endsection

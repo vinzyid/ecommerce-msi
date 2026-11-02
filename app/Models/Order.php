@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\OrderStatusChanged;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -10,6 +11,9 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Throwable;
 
 class Order extends Model
 {
@@ -43,6 +47,27 @@ class Order extends Model
         'shipped_at',
         'completed_at',
     ];
+
+    protected static function booted(): void
+    {
+        static::updated(function (Order $order) {
+            if ($order->wasChanged('status') && in_array($order->status, ['processing', 'shipped', 'cancelled'], true)) {
+                DB::afterCommit(fn () => $order->notifyCustomer());
+            }
+        });
+    }
+
+    /**
+     * Email yang gagal terkirim tidak boleh menggagalkan perubahan status.
+     */
+    private function notifyCustomer(): void
+    {
+        try {
+            $this->user?->notify(new OrderStatusChanged($this));
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
 
     protected function casts(): array
     {
@@ -97,6 +122,60 @@ class Order extends Model
             'qris' => 'QRIS',
             default => 'Transfer bank',
         };
+    }
+
+    /**
+     * Pembeli hanya bisa membatalkan sebelum paket diserahkan ke kurir.
+     */
+    public function isCancellable(): bool
+    {
+        return in_array($this->status, ['pending', 'processing'], true);
+    }
+
+    /**
+     * Batalkan pesanan sekaligus kembalikan stok dan kuota voucher yang terpakai.
+     *
+     * @return bool false bila status pesanan sudah final
+     */
+    public function cancel(): bool
+    {
+        $cancelled = DB::transaction(function () {
+            $order = self::query()->with('items')->lockForUpdate()->findOrFail($this->id);
+
+            if (in_array($order->status, ['completed', 'cancelled'], true)) {
+                return false;
+            }
+
+            foreach ($order->items as $item) {
+                Product::query()->find($item->product_id)?->increment('stock', $item->quantity);
+            }
+
+            $voucher = $order->voucher_id ? Voucher::query()->find($order->voucher_id) : null;
+            if ($voucher && $voucher->used_count > 0) {
+                $voucher->decrement('used_count');
+            }
+
+            $order->update(['status' => 'cancelled']);
+
+            return true;
+        });
+
+        $this->refresh();
+
+        return $cancelled;
+    }
+
+    /**
+     * Serahkan paket ke kurir: terbitkan nomor resi bila belum ada.
+     */
+    public function markShipped(): void
+    {
+        $this->update([
+            'status' => 'shipped',
+            'courier' => $this->courier ?? ($this->shipping_method === 'express' ? 'JNE YES (Kilat)' : 'JNE Regular'),
+            'tracking_number' => $this->tracking_number ?? 'VP-JNE-'.now()->format('ymd').'-'.Str::upper(Str::random(6)),
+            'shipped_at' => $this->shipped_at ?? now(),
+        ]);
     }
 
     public function paymentStatusLabel(): string

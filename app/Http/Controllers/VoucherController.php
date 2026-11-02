@@ -23,6 +23,10 @@ class VoucherController extends Controller
             return back()->withErrors(['code' => 'Kode promo tidak valid atau sudah kedaluwarsa.']);
         }
 
+        if (! $voucher->isUsableBy($request->user())) {
+            return back()->withErrors(['code' => 'Kamu sudah mencapai batas pemakaian kode promo ini.']);
+        }
+
         $subtotal = $request->user()->cartItems()
             ->with('product')
             ->get()

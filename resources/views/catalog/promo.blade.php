@@ -8,7 +8,8 @@
         ->where('is_active', true)
         ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
         ->orderBy('min_spend')
-        ->get();
+        ->get()
+        ->filter(fn ($voucher) => $voucher->isUsable());
 @endphp
 
 <div class="container-page pt-12">

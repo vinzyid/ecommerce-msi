@@ -64,6 +64,7 @@ class VoucherController extends Controller
             'min_spend' => 'nullable|integer|min:0|max:99999999',
             'max_discount' => 'nullable|integer|min:0|max:99999999',
             'usage_limit' => 'nullable|integer|min:1|max:1000000',
+            'per_user_limit' => 'nullable|integer|min:1|max:1000000',
             'expires_at' => 'nullable|date',
             'is_active' => 'nullable|boolean',
         ], [
@@ -75,6 +76,7 @@ class VoucherController extends Controller
         $validated['min_spend'] = $validated['min_spend'] ?? 0;
         $validated['max_discount'] = $validated['max_discount'] ?? null;
         $validated['usage_limit'] = $validated['usage_limit'] ?? null;
+        $validated['per_user_limit'] = $validated['per_user_limit'] ?? null;
 
         return $validated;
     }

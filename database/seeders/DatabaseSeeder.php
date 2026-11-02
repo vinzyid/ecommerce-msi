@@ -11,11 +11,18 @@ use App\Models\User;
 use App\Models\Voucher;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Seeder ini menghapus semua pesanan dan mereset akun contoh, jadi hanya boleh jalan
+        // di database kosong kecuali memang diminta lewat SEED_RESET=true.
+        if (Order::query()->exists() && ! filter_var(env('SEED_RESET', false), FILTER_VALIDATE_BOOLEAN)) {
+            throw new RuntimeException('Seeder dibatalkan: database sudah berisi pesanan. Set SEED_RESET=true bila yakin ingin menghapusnya.');
+        }
+
         $this->seedUsers();
         $categories = $this->seedCategories();
         $this->seedProducts($categories);
@@ -269,6 +276,7 @@ class DatabaseSeeder extends Seeder
         foreach ($vouchers as $data) {
             Voucher::query()->updateOrCreate(['code' => $data['code']], $data + [
                 'usage_limit' => null,
+                'per_user_limit' => 1,
                 'used_count' => 0,
                 'is_active' => true,
                 'expires_at' => now()->addMonths(6),

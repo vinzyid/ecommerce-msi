@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\ExpiresChatbotCache;
+use App\Models\Concerns\RefreshesStoreCaches;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Voucher extends Model
 {
-    use ExpiresChatbotCache, HasFactory;
+    use RefreshesStoreCaches, HasFactory;
 
     public const TYPES = ['percent', 'fixed'];
 
@@ -20,6 +20,7 @@ class Voucher extends Model
         'min_spend',
         'max_discount',
         'usage_limit',
+        'per_user_limit',
         'used_count',
         'is_active',
         'expires_at',
@@ -32,6 +33,7 @@ class Voucher extends Model
             'min_spend' => 'integer',
             'max_discount' => 'integer',
             'usage_limit' => 'integer',
+            'per_user_limit' => 'integer',
             'used_count' => 'integer',
             'is_active' => 'boolean',
             'expires_at' => 'datetime',
@@ -53,6 +55,21 @@ class Voucher extends Model
         }
 
         return true;
+    }
+
+    /**
+     * Pesanan yang dibatalkan tidak dihitung, jadi kuotanya kembali ke pengguna.
+     */
+    public function isUsableBy(User $user): bool
+    {
+        if (! $this->isUsable()) {
+            return false;
+        }
+
+        return $this->per_user_limit === null || $user->orders()
+            ->where('voucher_id', $this->id)
+            ->where('status', '!=', 'cancelled')
+            ->count() < $this->per_user_limit;
     }
 
     public function discountFor(int $subtotal): int

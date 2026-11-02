@@ -246,8 +246,7 @@ class CommerceTest extends TestCase
         $order = $this->order($user);
         $order->update(['payment_method' => 'qris']);
 
-        $this->actingAs($user)->post(route('orders.simulatePayment', $order))
-            ->assertSessionHas('success', fn (string $message) => str_contains($message, 'QRIS'));
+        $this->actingAs($user)->post(route('orders.simulatePayment', $order))->assertRedirect(route('orders.paid', $order));
 
         $this->assertSame('processing', $order->fresh()->status);
         $this->assertSame('Lunas', $order->fresh()->paymentStatusLabel());

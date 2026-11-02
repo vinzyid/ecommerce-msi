@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\VoucherController as AdminVoucherController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\GoogleLoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ChatbotController;
@@ -21,8 +23,34 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [CatalogController::class, 'index'])->name('home');
 Route::view('/tentang', 'pages.about')->name('about');
+Route::view('/syarat', 'pages.policy', [
+    'title' => 'Syarat & Ketentuan',
+    'sections' => [
+        'Akun' => 'Kamu bertanggung jawab menjaga kerahasiaan password dan semua aktivitas di akunmu.',
+        'Harga dan stok' => 'Harga dan stok mengikuti data saat checkout. Pesanan hanya dibuat bila stok masih mencukupi.',
+        'Pesanan' => 'Kamu bisa membatalkan pesanan selama statusnya Menunggu atau Diproses. Pesanan yang sudah dikirim tidak bisa dibatalkan.',
+        'Ulasan' => 'Ulasan bisa ditulis setelah pesanan selesai. Admin dapat menghapus ulasan yang melanggar aturan.',
+    ],
+])->name('pages.terms');
+Route::view('/privasi', 'pages.policy', [
+    'title' => 'Kebijakan Privasi',
+    'sections' => [
+        'Data yang kami simpan' => 'Kami menyimpan email, username, alamat pengiriman, nomor telepon, riwayat pesanan, wishlist, dan ulasanmu. Password disimpan dalam bentuk hash. Bila masuk dengan Google, kami juga menyimpan ID akun Google-mu.',
+        'Chatbot' => 'Pertanyaan yang kamu kirim ke chatbot diteruskan ke penyedia layanan AI dan sebagian disimpan sebagai cache jawaban. Saat kamu menanyakan pesanan, nomor, status, isi, total, dan resi pesananmu ikut diteruskan, tanpa alamat dan nomor telepon. Jangan menulis data pribadi di chat. Riwayat chat tersimpan di browsermu.',
+        'Penggunaan data' => 'Data dipakai untuk memproses pesanan dan menjalankan fitur toko. Kami tidak menjual datamu.',
+    ],
+])->name('pages.privacy');
+Route::view('/retur', 'pages.policy', [
+    'title' => 'Pembayaran & Retur',
+    'sections' => [
+        'Pembayaran' => 'Tersedia Transfer Bank (Virtual Account), QRIS, dan Bayar di Tempat (COD). Semua pembayaran berjalan dalam mode simulasi.',
+        'Pembatalan' => 'Batalkan pesanan dari halaman detail pesanan selama statusnya Menunggu atau Diproses. Stok dan kuota voucher otomatis dikembalikan.',
+        'Retur' => 'Barang rusak atau tidak sesuai bisa diajukan untuk diganti maksimal 7 hari setelah diterima dengan menghubungi kami. Pengajuan retur belum tersedia di dalam aplikasi.',
+    ],
+])->name('pages.returns');
 Route::get('/promo', [CatalogController::class, 'promo'])->name('promo');
 Route::get('/kategori', [CatalogController::class, 'categories'])->name('categories.index');
+Route::get('/search/suggest', [CatalogController::class, 'suggest'])->middleware('throttle:search')->name('search.suggest');
 Route::get('/products/{product}', [CatalogController::class, 'show'])->name('products.show');
 
 // Chatbot konsumen (boleh diakses tanpa login).
@@ -34,6 +62,20 @@ Route::post('/chatbot/feedback', [ChatbotController::class, 'feedback'])
     ->name('chatbot.feedback');
 
 Route::middleware('guest')->group(function () {
+    Route::get('/auth/google', [GoogleLoginController::class, 'redirect'])
+        ->middleware('throttle:login')
+        ->name('auth.google');
+    Route::get('/auth/google/callback', [GoogleLoginController::class, 'callback'])
+        ->middleware('throttle:login')
+        ->name('auth.google.callback');
+    Route::get('/lupa-password', [PasswordResetController::class, 'create'])->name('password.request');
+    Route::post('/lupa-password', [PasswordResetController::class, 'store'])
+        ->middleware('throttle:password')
+        ->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'update'])
+        ->middleware('throttle:password')
+        ->name('password.update');
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])
         ->middleware('throttle:register');
@@ -74,6 +116,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+    Route::get('/orders/{order}/pembayaran-berhasil', [OrderController::class, 'paid'])->name('orders.paid');
+    Route::post('/orders/{order}/reviews', [ReviewController::class, 'storeForOrder'])->name('orders.reviews.store');
+    Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder'])->name('orders.reorder');
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('/orders/{order}/simulate-payment', [OrderController::class, 'simulatePayment'])->name('orders.simulatePayment');
     Route::post('/orders/{order}/simulate-ship', [OrderController::class, 'simulateShip'])->name('orders.simulateShip');
     Route::post('/orders/{order}/complete', [OrderController::class, 'complete'])->name('orders.complete');
@@ -88,6 +134,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::patch('/users/{user}/role', [AdminUserController::class, 'updateRole'])->name('users.role');
     Route::resource('vouchers', AdminVoucherController::class)->only(['index', 'create', 'store', 'edit', 'update']);
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/export', [AdminOrderController::class, 'export'])->name('orders.export');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');
 

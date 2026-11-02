@@ -13,7 +13,7 @@
             'price_desc' => 'Harga tertinggi',
         ];
         $currentSort = request('sort', 'featured');
-        $baseQuery = array_filter(['q' => request('q'), 'category' => request('category')]);
+        $baseQuery = array_filter(['q' => request('q'), 'category' => request('category'), 'min_price' => request('min_price'), 'max_price' => request('max_price')]);
         $rupiah = fn ($value) => 'Rp'.number_format((float) $value, 0, ',', '.');
     @endphp
 

@@ -774,10 +774,20 @@ function initChatbot() {
         return row;
     };
 
+    // Tombol pesanan dibuat dari data server, bukan dari tulisan AI
+    const orderLinks = (orders) =>
+        (orders || []).map((o) => {
+            const url = safeHref(o.url);
+            if (!url) return '';
+            return `<a href="${escapeHtml(url)}" class="mt-1.5 flex items-center justify-between gap-2 rounded-xl border border-ink-200 bg-white px-3 py-2 text-xs hover:border-ink-400">` +
+                `<span class="min-w-0 truncate font-semibold text-ink-900">${escapeHtml(o.number)}</span>` +
+                `<span class="shrink-0 text-ink-500">${escapeHtml(o.status)} &rsaquo;</span></a>`;
+        }).join('');
+
     const finishBot = (bubbleEls, entry) => {
         bubbleEls.content.classList.remove('chatbot-streaming');
         bubbleEls.content.innerHTML = formatText(entry.text);
-        bubbleEls.extras.innerHTML = productCards(entry.products);
+        bubbleEls.extras.innerHTML = orderLinks(entry.orders) + productCards(entry.products);
         if (!entry.blocked && entry.question) bubbleEls.meta.after(feedbackRow(entry));
     };
 
@@ -897,6 +907,7 @@ function initChatbot() {
                     Object.assign(entry, {
                         text: event.answer || answer,
                         products: event.products || [],
+                        orders: event.orders || [],
                         messageId: event.message_id || null,
                         blocked: Boolean(event.blocked),
                     });
@@ -947,3 +958,185 @@ function initChatbot() {
         btn.addEventListener('click', () => send(btn.dataset.chatbotSuggest));
     });
 }
+
+/* ---------- Riwayat & saran pencarian ---------- */
+document.addEventListener('DOMContentLoaded', () => {
+    const storeKey = 'search_history';
+    const maxHistory = 6;
+
+    const loadHistory = () => {
+        try {
+            const items = JSON.parse(localStorage.getItem(storeKey) || '[]');
+            return Array.isArray(items) ? items.filter((item) => typeof item === 'string') : [];
+        } catch {
+            return [];
+        }
+    };
+
+    const saveHistory = (items) => {
+        try {
+            localStorage.setItem(storeKey, JSON.stringify(items));
+        } catch { /* mode privat / penuh */ }
+    };
+
+    document.querySelectorAll('[data-search-form]').forEach((form, formIndex) => {
+        const input = form.querySelector('input[name="q"]');
+        if (!input) return;
+
+        const anchor = form.querySelector('[data-search-anchor]') || form;
+        const panel = document.createElement('div');
+        panel.id = `search-panel-${formIndex}`;
+        panel.setAttribute('role', 'listbox');
+        panel.setAttribute('aria-label', 'Saran pencarian');
+        panel.hidden = true;
+        panel.className = 'absolute inset-x-0 top-full z-50 mt-2 max-h-96 overflow-y-auto rounded-2xl border border-ink-100 bg-white py-2 text-sm shadow-lift';
+        anchor.append(panel);
+        input.setAttribute('aria-controls', panel.id);
+
+        let controller = null;
+        let timer = 0;
+        let activeIndex = -1;
+
+        const options = () => [...panel.querySelectorAll('[role="option"]')];
+
+        const close = () => {
+            panel.hidden = true;
+            activeIndex = -1;
+            input.setAttribute('aria-expanded', 'false');
+            input.removeAttribute('aria-activedescendant');
+        };
+
+        const open = () => {
+            panel.hidden = panel.childElementCount === 0;
+            input.setAttribute('aria-expanded', String(!panel.hidden));
+        };
+
+        const heading = (text, action) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between px-4 pb-1 pt-2 text-xs text-ink-500';
+            const label = document.createElement('span');
+            label.textContent = text;
+            row.append(label);
+            if (action) row.append(action);
+            panel.append(row);
+        };
+
+        const addOption = (href, text, image) => {
+            const link = document.createElement('a');
+            link.href = href;
+            link.id = `${panel.id}-option-${options().length}`;
+            link.setAttribute('role', 'option');
+            link.className = 'flex items-center gap-3 px-4 py-2 text-ink-800 hover:bg-ink-50 aria-selected:bg-ink-50';
+            if (image) {
+                const img = document.createElement('img');
+                img.src = image;
+                img.alt = '';
+                img.loading = 'lazy';
+                img.className = 'h-9 w-9 shrink-0 rounded-lg bg-ink-50 object-contain p-0.5 mix-blend-multiply';
+                link.append(img);
+            }
+            const label = document.createElement('span');
+            label.className = 'min-w-0 truncate';
+            label.textContent = text;
+            link.append(label);
+            panel.append(link);
+        };
+
+        const searchUrl = (term) => {
+            const url = new URL(form.action);
+            url.searchParams.set('q', term);
+            return url.href;
+        };
+
+        const render = (term, suggestions = []) => {
+            panel.replaceChildren();
+            activeIndex = -1;
+            input.removeAttribute('aria-activedescendant');
+
+            const lower = term.toLowerCase();
+            const history = loadHistory().filter((item) => item.toLowerCase().includes(lower));
+
+            if (history.length > 0) {
+                const clear = document.createElement('button');
+                clear.type = 'button';
+                clear.className = 'font-medium text-brand-600 hover:underline';
+                clear.textContent = 'Hapus';
+                clear.addEventListener('click', () => {
+                    saveHistory([]);
+                    render(input.value.trim(), suggestions);
+                    input.focus();
+                });
+                heading('Pencarian terakhir', clear);
+                history.forEach((item) => addOption(searchUrl(item), item));
+            }
+
+            if (suggestions.length > 0) {
+                heading('Produk');
+                suggestions.forEach((item) => addOption(item.url, item.name, item.image_url));
+            }
+
+            open();
+        };
+
+        const fetchSuggestions = (term) => {
+            controller?.abort();
+            if (term.length < 2) {
+                render(term);
+                return;
+            }
+
+            controller = new AbortController();
+            const signal = controller.signal;
+            fetch(`${form.dataset.suggestUrl}?q=${encodeURIComponent(term)}`, {
+                headers: { Accept: 'application/json' },
+                signal,
+            })
+                .then((res) => (res.ok ? res.json() : { suggestions: [] }))
+                .then((data) => {
+                    if (input.value.trim() === term) render(term, data.suggestions || []);
+                })
+                .catch(() => { /* permintaan dibatalkan atau koneksi gagal */ });
+        };
+
+        input.addEventListener('focus', () => render(input.value.trim()));
+        input.addEventListener('input', () => {
+            clearTimeout(timer);
+            const term = input.value.trim();
+            render(term);
+            timer = setTimeout(() => fetchSuggestions(term), 200);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+                return;
+            }
+            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') {
+                if (e.key === 'Enter' && activeIndex >= 0) {
+                    e.preventDefault();
+                    options()[activeIndex]?.click();
+                }
+                return;
+            }
+
+            const items = options();
+            if (panel.hidden || items.length === 0) return;
+            e.preventDefault();
+            items[activeIndex]?.setAttribute('aria-selected', 'false');
+            activeIndex = (activeIndex + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+            items[activeIndex].setAttribute('aria-selected', 'true');
+            items[activeIndex].scrollIntoView({ block: 'nearest' });
+            input.setAttribute('aria-activedescendant', items[activeIndex].id);
+        });
+
+        // Klik di dalam panel jangan sampai menutup panel lebih dulu.
+        panel.addEventListener('mousedown', (e) => e.preventDefault());
+        input.addEventListener('blur', close);
+
+        form.addEventListener('submit', () => {
+            const term = input.value.trim();
+            if (term === '') return;
+            saveHistory([term, ...loadHistory().filter((item) => item.toLowerCase() !== term.toLowerCase())].slice(0, maxHistory));
+        });
+    });
+});

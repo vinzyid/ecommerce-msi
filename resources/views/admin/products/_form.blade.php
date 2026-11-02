@@ -92,11 +92,17 @@
 </div>
 
 <div class="mt-4">
+    <label for="image" class="{{ $label }}">Unggah foto <span class="font-normal text-ink-400">(JPG, PNG, atau WEBP, maks. 2 MB)</span></label>
+    <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp" class="{{ $field }} mt-1.5">
+    @error('image')<p class="mt-1.5 text-xs font-semibold text-danger-600">{{ $message }}</p>@enderror
+</div>
+
+<div class="mt-4">
     <label for="image_url" class="{{ $label }}">URL gambar <span class="font-normal text-ink-400">(opsional)</span></label>
     <input id="image_url" name="image_url" type="text" value="{{ old('image_url', $product?->image_url) }}" maxlength="500"
            placeholder="/images/products/mechanical-keyboard.svg" class="{{ $field }} mt-1.5">
     @error('image_url')<p class="mt-1.5 text-xs font-semibold text-danger-600">{{ $message }}</p>@enderror
-    <p class="mt-1.5 text-xs text-ink-400">Gunakan path lokal seperti <code class="rounded bg-ink-100 px-1 py-0.5">/images/products/nama-file.svg</code> atau URL lengkap.</p>
+    <p class="mt-1.5 text-xs text-ink-400">Gunakan path lokal seperti <code class="rounded bg-ink-100 px-1 py-0.5">/images/products/nama-file.svg</code> atau URL lengkap. Foto yang diunggah menggantikan isian ini.</p>
 </div>
 
 <div class="mt-5 flex flex-wrap gap-5 border-t border-ink-100 pt-4">

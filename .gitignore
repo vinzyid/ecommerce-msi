@@ -28,3 +28,7 @@ Thumbs.db
 # Dokumen internal (hanya README yang dipublikasikan)
 /*.md
 !/README.md
+
+# Foto produk yang diunggah admin
+/public/images/products/uploads
+/public/images/reviews

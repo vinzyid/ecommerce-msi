@@ -54,6 +54,11 @@
         <input id="usage_limit" name="usage_limit" type="number" min="1" step="1" value="{{ old('usage_limit', $voucher?->usage_limit) }}" class="{{ $field }} mt-1.5">
         @error('usage_limit')<p class="mt-1.5 text-xs font-semibold text-danger-600">{{ $message }}</p>@enderror
     </div>
+    <div>
+        <label for="per_user_limit" class="{{ $label }}">Batas per pengguna <span class="font-normal text-ink-400">(opsional)</span></label>
+        <input id="per_user_limit" name="per_user_limit" type="number" min="1" step="1" value="{{ old('per_user_limit', $voucher?->per_user_limit) }}" class="{{ $field }} mt-1.5">
+        @error('per_user_limit')<p class="mt-1.5 text-xs font-semibold text-danger-600">{{ $message }}</p>@enderror
+    </div>
 </div>
 
 <div class="mt-4">
