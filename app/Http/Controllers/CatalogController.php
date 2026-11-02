@@ -239,12 +239,7 @@ class CatalogController extends Controller
             ? $product->reviews->firstWhere('user_id', auth()->id())
             : null;
 
-        $hasPurchased = auth()->check() && (
-            auth()->user()->is_admin || auth()->user()->orders()
-                ->where('status', '!=', 'cancelled')
-                ->whereHas('items', fn ($q) => $q->where('product_id', $product->id))
-                ->exists()
-        );
+        $canReview = auth()->check() && auth()->user()->canReview($product);
 
         return view('catalog.show', compact(
             'product',
@@ -252,7 +247,7 @@ class CatalogController extends Controller
             'ratingBreakdown',
             'isWishlisted',
             'userReview',
-            'hasPurchased',
+            'canReview',
             'wishlistedProductIds',
         ));
     }

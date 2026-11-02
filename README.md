@@ -34,7 +34,7 @@ Proyek ini dibuat oleh **Rafi Pandya P** untuk mata kuliah Praktik MSI.
 | **Keranjang** | Memilih barang yang mau dibeli, mengubah jumlah, dan melihat total langsung berubah |
 | **Checkout** | Memilih alamat tersimpan, Pengiriman Reguler atau Kilat, lalu Transfer Bank (Virtual Account) atau COD |
 | **Pesanan** | Mengikuti status pesanan, nomor resi, dan timeline perjalanan paket |
-| **Ulasan** | Mengulas produk yang pernah dibeli |
+| **Ulasan** | Mengulas produk setelah pesanan selesai |
 | **Akun** | Mengelola profil, buku alamat, password, dan riwayat pesanan |
 
 Ongkir Reguler Rp15.000 dan gratis untuk belanja minimal Rp300.000 setelah diskon. Ongkir Kilat Rp25.000.
@@ -182,7 +182,7 @@ Panel admin ada di `/admin`. Ganti kedua password ini sebelum deploy ke server p
 php artisan test
 ```
 
-Test memakai SQLite in-memory dan AI palsu, jadi database development dan kuota API kamu aman. Saat ini ada 84 test yang mencakup autentikasi, alur belanja, panel admin, dan chatbot.
+Test memakai SQLite in-memory dan AI palsu, jadi database development dan kuota API kamu aman. Saat ini ada 92 test yang mencakup autentikasi, alur belanja, panel admin, dan chatbot.
 
 Untuk membandingkan kualitas dan kecepatan model AI, jalankan `php artisan chatbot:benchmark`. Perintah ini memanggil API asli dan memakai kuota.
 

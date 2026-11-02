@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class CommerceTest extends TestCase
@@ -185,16 +186,8 @@ class CommerceTest extends TestCase
         $user = User::factory()->create();
         $product = $this->product($this->category());
 
-        // Ulasan hanya boleh untuk produk yang sudah dibeli.
-        $order = $this->order($user);
-        $order->items()->create([
-            'product_id' => $product->id,
-            'product_name' => $product->name,
-            'sku' => $product->sku,
-            'price' => $product->price,
-            'quantity' => 1,
-            'subtotal' => $product->price,
-        ]);
+        // Ulasan hanya boleh untuk produk yang pesanannya sudah selesai.
+        $this->orderedProduct($user, $product, 'completed');
 
         $this->actingAs($user)->post("/products/{$product->slug}/reviews", [
             'rating' => 5,
@@ -211,6 +204,76 @@ class CommerceTest extends TestCase
 
         $this->assertDatabaseCount('reviews', 1);
         $this->assertDatabaseHas('reviews', ['product_id' => $product->id, 'user_id' => $user->id, 'rating' => 3]);
+    }
+
+    #[DataProvider('unfinishedOrderStatuses')]
+    public function test_customer_cannot_review_before_order_is_completed(string $status): void
+    {
+        $user = User::factory()->create();
+        $product = $this->product($this->category());
+        $this->orderedProduct($user, $product, $status);
+
+        $this->actingAs($user)->post("/products/{$product->slug}/reviews", ['rating' => 5])
+            ->assertSessionHasErrors('review');
+
+        $this->assertDatabaseCount('reviews', 0);
+        $this->actingAs($user)->get('/products/'.$product->slug)->assertDontSee('Kirim ulasan');
+    }
+
+    public static function unfinishedOrderStatuses(): array
+    {
+        return [['pending'], ['processing'], ['shipped'], ['cancelled']];
+    }
+
+    public function test_customer_sees_review_form_after_order_is_completed(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->product($this->category());
+        $this->orderedProduct($user, $product, 'completed');
+
+        $this->actingAs($user)->get('/products/'.$product->slug)->assertSee('Kirim ulasan');
+    }
+
+    public function test_completed_order_of_another_product_does_not_allow_review(): void
+    {
+        $user = User::factory()->create();
+        $category = $this->category();
+        $bought = $this->product($category);
+        $other = $this->product($category, ['name' => 'Produk Lain', 'slug' => 'produk-lain', 'sku' => 'LAIN-001']);
+        $this->orderedProduct($user, $bought, 'completed');
+
+        $this->actingAs($user)->post("/products/{$other->slug}/reviews", ['rating' => 5])
+            ->assertSessionHasErrors('review');
+
+        $this->assertDatabaseCount('reviews', 0);
+    }
+
+    public function test_customer_without_order_cannot_review(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->product($this->category());
+
+        $this->actingAs($user)->post("/products/{$product->slug}/reviews", ['rating' => 5])
+            ->assertSessionHasErrors('review');
+
+        $this->assertDatabaseCount('reviews', 0);
+    }
+
+    public function test_admin_cannot_review_without_buying_but_can_delete_reviews(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create();
+        $product = $this->product($this->category());
+        $review = $product->reviews()->create(['user_id' => $customer->id, 'rating' => 1, 'comment' => 'Spam.']);
+
+        $this->actingAs($admin)->post("/products/{$product->slug}/reviews", ['rating' => 5])
+            ->assertSessionHasErrors('review');
+
+        $this->assertDatabaseMissing('reviews', ['user_id' => $admin->id]);
+
+        $this->actingAs($admin)->delete("/reviews/{$review->id}")->assertRedirect();
+
+        $this->assertDatabaseCount('reviews', 0);
     }
 
     public function test_product_detail_shows_rating_and_information(): void
@@ -260,6 +323,20 @@ class CommerceTest extends TestCase
             'is_active' => true,
             'is_featured' => false,
         ], $attributes));
+    }
+
+    private function orderedProduct(User $user, Product $product, string $status): void
+    {
+        $order = $this->order($user);
+        $order->update(['status' => $status]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'sku' => $product->sku,
+            'price' => $product->price,
+            'quantity' => 1,
+            'subtotal' => $product->price,
+        ]);
     }
 
     private function order(User $user): Order

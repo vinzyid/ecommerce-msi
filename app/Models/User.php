@@ -92,4 +92,15 @@ class User extends Authenticatable
             ->orderByDesc('id')
             ->first();
     }
+
+    /**
+     * Ulasan hanya boleh ditulis setelah pembeli menerima barang (pesanan selesai).
+     */
+    public function canReview(Product $product): bool
+    {
+        return $this->orders()
+            ->where('status', 'completed')
+            ->whereHas('items', fn ($query) => $query->where('product_id', $product->id))
+            ->exists();
+    }
 }

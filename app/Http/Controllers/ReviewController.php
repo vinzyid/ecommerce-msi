@@ -23,14 +23,9 @@ class ReviewController extends Controller
 
         $user = $request->user();
 
-        $hasPurchased = $user->is_admin || $user->orders()
-            ->where('status', '!=', 'cancelled')
-            ->whereHas('items', fn ($query) => $query->where('product_id', $product->id))
-            ->exists();
-
-        if (! $hasPurchased) {
+        if (! $user->canReview($product)) {
             return back()->withErrors([
-                'review' => 'Anda hanya dapat menulis ulasan untuk produk yang sudah pernah Anda beli.',
+                'review' => 'Ulasan bisa ditulis setelah pesanan selesai.',
             ]);
         }
 

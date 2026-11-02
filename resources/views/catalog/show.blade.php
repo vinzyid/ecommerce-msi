@@ -227,7 +227,7 @@
 
         <div class="space-y-4">
             @auth
-                @if ($hasPurchased)
+                @if ($canReview)
                     @php $editing = $userReview !== null; @endphp
                     <form method="POST" action="{{ route('reviews.store', $product) }}" class="rounded-[1.5rem] bg-ink-50 p-6">
                         @csrf
