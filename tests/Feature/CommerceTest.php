@@ -206,6 +206,131 @@ class CommerceTest extends TestCase
         $this->assertDatabaseHas('reviews', ['product_id' => $product->id, 'user_id' => $user->id, 'rating' => 3]);
     }
 
+    public function test_checkout_accepts_qris_and_shows_demo_qr_code(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->product($this->category(), ['price' => 100000, 'stock' => 8]);
+        CartItem::create(['user_id' => $user->id, 'product_id' => $product->id, 'quantity' => 1]);
+
+        $this->actingAs($user)->post('/checkout', $this->checkoutPayload(['payment_method' => 'qris']))->assertRedirect();
+
+        $order = Order::firstOrFail();
+        $this->assertSame('qris', $order->payment_method);
+        $this->assertSame('QRIS', $order->paymentLabel());
+        $this->assertSame('Belum dibayar', $order->paymentStatusLabel());
+
+        $this->actingAs($user)->get(route('orders.show', $order))
+            ->assertOk()
+            ->assertSee('Pembayaran QRIS')
+            ->assertSee('Mode Demo / Sandbox')
+            ->assertSee('<svg xmlns="http://www.w3.org/2000/svg"', false)
+            ->assertDontSee('<?xml', false)
+            ->assertDontSee('Bank Central Asia');
+    }
+
+    public function test_unknown_payment_method_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->product($this->category());
+        CartItem::create(['user_id' => $user->id, 'product_id' => $product->id, 'quantity' => 1]);
+
+        $this->actingAs($user)->post('/checkout', $this->checkoutPayload(['payment_method' => 'gopay']))
+            ->assertSessionHasErrors('payment_method');
+
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_simulated_qris_payment_marks_order_as_paid(): void
+    {
+        $user = User::factory()->create();
+        $order = $this->order($user);
+        $order->update(['payment_method' => 'qris']);
+
+        $this->actingAs($user)->post(route('orders.simulatePayment', $order))
+            ->assertSessionHas('success', fn (string $message) => str_contains($message, 'QRIS'));
+
+        $this->assertSame('processing', $order->fresh()->status);
+        $this->assertSame('Lunas', $order->fresh()->paymentStatusLabel());
+
+        $this->actingAs($user)->get(route('orders.show', $order))
+            ->assertSee('Pembayaran QRIS Berhasil');
+
+        $this->assertSame('Pembayaran QRIS berhasil diverifikasi.', $order->fresh()->trackingTimeline()[0]['desc']);
+    }
+
+    public function test_expired_qris_cannot_be_paid(): void
+    {
+        $user = User::factory()->create();
+        $order = $this->order($user);
+        $order->update(['payment_method' => 'qris']);
+
+        $this->travel(Order::QRIS_VALID_HOURS + 1)->hours();
+
+        $this->actingAs($user)->post(route('orders.simulatePayment', $order))->assertSessionHasErrors('status');
+        $this->assertSame('pending', $order->fresh()->status);
+
+        $this->actingAs($user)->get(route('orders.show', $order))
+            ->assertSee('Kedaluwarsa')
+            ->assertDontSee('<svg xmlns="http://www.w3.org/2000/svg"', false)
+            ->assertDontSee('Bayar &amp; Tandai Lunas', false);
+    }
+
+    public function test_customer_can_open_invoice_with_order_details(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->product($this->category());
+        $this->orderedProduct($user, $product, 'completed');
+        $order = Order::firstOrFail();
+        $order->update(['voucher_code' => 'HEMAT10', 'discount' => 5000, 'shipping_cost' => 0]);
+
+        $this->actingAs($user)->get(route('orders.show', $order))->assertSee('Cetak Invoice');
+
+        $this->actingAs($user)->get(route('orders.invoice', $order))
+            ->assertOk()
+            ->assertSee('INVOICE')
+            ->assertSee($order->order_number)
+            ->assertSee('Pelanggan Uji')
+            ->assertSee($product->name)
+            ->assertSee($product->sku)
+            ->assertSee('Diskon (HEMAT10)')
+            ->assertSee('-Rp5.000')
+            ->assertSee('Gratis')
+            ->assertSee('Rp65.000')
+            ->assertSee('Cetak / Simpan PDF');
+    }
+
+    public function test_invoice_is_only_available_to_owner_and_admin(): void
+    {
+        $owner = User::factory()->create();
+        $order = $this->order($owner);
+
+        $this->get(route('orders.invoice', $order))->assertRedirect('/login');
+        $this->actingAs(User::factory()->create())->get(route('orders.invoice', $order))->assertForbidden();
+        $this->actingAs(User::factory()->create(['is_admin' => true]))->get(route('orders.invoice', $order))->assertOk();
+    }
+
+    #[DataProvider('paymentStatuses')]
+    public function test_invoice_payment_status_label(string $method, string $status, string $label): void
+    {
+        $order = $this->order(User::factory()->create());
+        $order->update(['payment_method' => $method, 'status' => $status]);
+
+        $this->assertSame($label, $order->paymentStatusLabel());
+    }
+
+    public static function paymentStatuses(): array
+    {
+        return [
+            ['bank_transfer', 'pending', 'Belum dibayar'],
+            ['bank_transfer', 'shipped', 'Lunas'],
+            ['qris', 'processing', 'Lunas'],
+            ['qris', 'cancelled', 'Dibatalkan'],
+            ['cod', 'pending', 'Bayar saat barang diterima'],
+            ['cod', 'shipped', 'Bayar saat barang diterima'],
+            ['cod', 'completed', 'Lunas'],
+        ];
+    }
+
     #[DataProvider('unfinishedOrderStatuses')]
     public function test_customer_cannot_review_before_order_is_completed(string $status): void
     {

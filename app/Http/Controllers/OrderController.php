@@ -26,8 +26,16 @@ class OrderController extends Controller
         return view('orders.show', compact('order'));
     }
 
+    public function invoice(Request $request, Order $order): View
+    {
+        abort_unless($order->user_id === $request->user()->id || $request->user()->is_admin, 403);
+        $order->load('items');
+
+        return view('orders.invoice', compact('order'));
+    }
+
     /**
-     * Fitur simulasi demo pembayaran Virtual Account (sandbox).
+     * Fitur simulasi demo pembayaran Virtual Account & QRIS (sandbox).
      * Mengecoh status pesanan menjadi lunas (processing) tanpa perlu bayar sungguhan.
      */
     public function simulatePayment(Request $request, Order $order): \Illuminate\Http\RedirectResponse
@@ -38,11 +46,15 @@ class OrderController extends Controller
             return back()->with('success', 'Pesanan ini sudah lunas atau diproses.');
         }
 
+        if ($order->payment_method === 'qris' && $order->isQrisExpired()) {
+            return back()->withErrors(['status' => 'Kode QR sudah kedaluwarsa.']);
+        }
+
         $order->update([
             'status' => 'processing',
         ]);
 
-        return back()->with('success', 'Pembayaran Virtual Account berhasil disimulasikan! Status pesanan kini LUNAS & sedang diproses penjual. 🎉');
+        return back()->with('success', 'Pembayaran '.($order->payment_method === 'qris' ? 'QRIS' : 'Virtual Account').' berhasil disimulasikan! Status pesanan kini LUNAS & sedang diproses penjual. 🎉');
     }
 
     /**

@@ -552,6 +552,7 @@ class ChatbotService
             '- '.CartCalculator::shippingLabel('express').': '.$rupiah(CartCalculator::EXPRESS_SHIPPING_COST).', tidak mendapat gratis ongkir.',
             'Metode pembayaran:',
             '- Transfer Bank (Virtual Account)',
+            '- QRIS',
             '- Bayar di Tempat (COD)',
             'Voucher aktif (kode dimasukkan di halaman keranjang atau checkout):',
             $vouchers !== '' ? $vouchers : '- Belum ada voucher aktif.',

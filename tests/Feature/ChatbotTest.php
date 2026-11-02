@@ -330,6 +330,7 @@ class ChatbotTest extends TestCase
             $this->assertStringContainsString('Pengiriman Reguler: Rp15.000, gratis ongkir bila total belanja setelah diskon minimal Rp300.000', $prompt);
             $this->assertStringContainsString('Pengiriman Kilat: Rp25.000', $prompt);
             $this->assertStringContainsString('Transfer Bank (Virtual Account)', $prompt);
+            $this->assertStringContainsString('- QRIS', $prompt);
             $this->assertStringContainsString('Bayar di Tempat (COD)', $prompt);
 
             return true;

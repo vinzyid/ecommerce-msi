@@ -111,8 +111,13 @@
             @endforeach
         </dl>
 
-        <a href="{{ route('admin.orders.index') }}"
+        <a href="{{ route('orders.invoice', $order) }}" target="_blank" rel="noopener"
            class="mt-5 block rounded-xl border border-ink-200 px-4 py-2.5 text-center text-sm font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700">
+            Cetak Invoice
+        </a>
+
+        <a href="{{ route('admin.orders.index') }}"
+           class="mt-2.5 block rounded-xl border border-ink-200 px-4 py-2.5 text-center text-sm font-semibold text-ink-600 transition hover:border-brand-300 hover:text-brand-700">
             &larr; Semua pesanan
         </a>
     </aside>

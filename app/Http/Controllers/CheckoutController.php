@@ -80,7 +80,7 @@ class CheckoutController extends Controller
             'postal_code' => 'required|string|max:10',
             'shipping_method' => ['required', Rule::in(['regular', 'express'])],
             'notes' => 'nullable|string|max:500',
-            'payment_method' => ['required', Rule::in(['cod', 'bank_transfer'])],
+            'payment_method' => ['required', Rule::in(['cod', 'bank_transfer', 'qris'])],
         ], [
             'customer_name.required' => 'Nama penerima wajib diisi.',
             'phone.required' => 'Nomor telepon wajib diisi.',

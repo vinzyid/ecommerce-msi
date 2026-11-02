@@ -210,6 +210,19 @@
                         </div>
                     </label>
 
+                    {{-- QRIS --}}
+                    <label class="flex cursor-pointer items-start gap-3.5 rounded-xl border-2 p-4 transition has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50 border-ink-100 hover:border-ink-200">
+                        <input type="radio" name="payment_method" value="qris" @checked(old('payment_method') === 'qris')
+                               class="mt-1 h-4.5 w-4.5 accent-brand-600">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <b class="text-sm font-bold text-ink-900">QRIS</b>
+                                <span class="rounded border border-ink-200 bg-ink-50 px-1.5 py-0.5 text-[10px] font-bold text-ink-700">Mode Demo</span>
+                            </div>
+                            <p class="mt-1 text-xs text-ink-500">Kode QR simulasi akan ditampilkan setelah pesanan dibuat.</p>
+                        </div>
+                    </label>
+
                     {{-- COD --}}
                     <label class="flex cursor-pointer items-start gap-3.5 rounded-xl border-2 p-4 transition has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50 border-ink-100 hover:border-ink-200">
                         <input type="radio" name="payment_method" value="cod" @checked(old('payment_method', 'cod') === 'cod')

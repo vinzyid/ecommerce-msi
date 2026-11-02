@@ -2,6 +2,11 @@
 
 namespace App\Models;
 
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Order extends Model
 {
     public const STATUSES = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
+
+    public const QRIS_VALID_HOURS = 24;
 
     protected $fillable = [
         'order_number',
@@ -85,7 +92,42 @@ class Order extends Model
 
     public function paymentLabel(): string
     {
-        return $this->payment_method === 'cod' ? 'Bayar di tempat' : 'Transfer bank';
+        return match ($this->payment_method) {
+            'cod' => 'Bayar di tempat',
+            'qris' => 'QRIS',
+            default => 'Transfer bank',
+        };
+    }
+
+    public function paymentStatusLabel(): string
+    {
+        return match (true) {
+            $this->status === 'cancelled' => 'Dibatalkan',
+            $this->payment_method === 'cod' => $this->status === 'completed' ? 'Lunas' : 'Bayar saat barang diterima',
+            $this->status === 'pending' => 'Belum dibayar',
+            default => 'Lunas',
+        };
+    }
+
+    public function qrisExpiresAt(): CarbonInterface
+    {
+        return $this->ordered_at->copy()->addHours(self::QRIS_VALID_HOURS);
+    }
+
+    public function isQrisExpired(): bool
+    {
+        return $this->qrisExpiresAt()->isPast();
+    }
+
+    /**
+     * Kode QR simulasi. Isinya sengaja bukan format QRIS asli sehingga aplikasi pembayaran akan menolaknya.
+     */
+    public function qrisQrSvg(): string
+    {
+        $renderer = new ImageRenderer(new RendererStyle(220, 1), new SvgImageBackEnd);
+        $svg = (new Writer($renderer))->writeString("DEMO-QRIS|{$this->order_number}|{$this->total}");
+
+        return preg_replace('/^<\?xml.*?\?>\s*/', '', $svg);
     }
 
     /**
@@ -115,7 +157,12 @@ class Order extends Model
             [
                 'step' => 'created',
                 'title' => 'Pesanan Dibuat',
-                'desc' => $this->payment_method === 'cod' ? 'Pesanan COD berhasil dibuat dan menunggu konfirmasi.' : 'Pembayaran Virtual Account berhasil diverifikasi.',
+                'desc' => match (true) {
+                    $this->payment_method === 'cod' => 'Pesanan COD berhasil dibuat dan menunggu konfirmasi.',
+                    $isPending => 'Pesanan berhasil dibuat dan menunggu pembayaran.',
+                    $this->payment_method === 'qris' => 'Pembayaran QRIS berhasil diverifikasi.',
+                    default => 'Pembayaran Virtual Account berhasil diverifikasi.',
+                },
                 'time' => $orderedTime,
                 'done' => true,
                 'current' => $isPending,

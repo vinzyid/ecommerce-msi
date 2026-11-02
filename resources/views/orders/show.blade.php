@@ -16,7 +16,13 @@
                 <span class="text-xs font-bold uppercase tracking-wide text-brand-600">Pesanan / {{ $order->ordered_at->format('d.m.Y') }}</span>
                 <h1 class="mt-1 text-2xl font-semibold tracking-tight text-ink-900">{{ $order->order_number }}</h1>
             </div>
-            <x-status-badge :status="$order->status" class="!px-3.5 !py-1.5 !text-sm" />
+            <div class="flex flex-wrap items-center gap-2.5">
+                <a href="{{ route('orders.invoice', $order) }}" target="_blank" rel="noopener"
+                   class="rounded-full border border-ink-200 bg-white px-4 py-1.5 text-sm font-medium text-ink-800 transition hover:border-ink-900">
+                    Cetak Invoice
+                </a>
+                <x-status-badge :status="$order->status" class="!px-3.5 !py-1.5 !text-sm" />
+            </div>
         </header>
 
         {{-- Stepper Status Pesanan (Tokopedia / Shopee Style) --}}
@@ -113,15 +119,64 @@
                             </form>
                         </div>
                     </div>
-                @elseif (in_array($order->payment_method, ['bank_transfer', 'transfer']) && in_array($order->status, ['processing', 'shipped', 'completed']))
-                    {{-- Kartu Sukses Pembayaran VA --}}
+                @elseif ($order->payment_method === 'qris' && $order->status === 'pending')
+                    {{-- Kartu Pembayaran QRIS (simulasi) --}}
+                    <div class="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50/80 to-white p-5 shadow-card">
+                        <div class="flex items-center justify-between gap-2.5">
+                            <div>
+                                <h3 class="text-sm font-bold text-ink-900">Pembayaran QRIS</h3>
+                                <p class="text-xs text-ink-500">
+                                    @if ($order->isQrisExpired())
+                                        Kode QR sudah kedaluwarsa pada {{ $order->qrisExpiresAt()->translatedFormat('d M Y, H:i') }}.
+                                    @else
+                                        Bayar sebelum {{ $order->qrisExpiresAt()->translatedFormat('d M Y, H:i') }}.
+                                    @endif
+                                </p>
+                            </div>
+                            <span class="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                                {{ $order->isQrisExpired() ? 'Kedaluwarsa' : 'Belum Dibayar' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-3 flex items-center justify-between text-xs text-ink-600">
+                            <span>Total yang harus dibayar:</span>
+                            <strong class="font-mono text-base font-semibold text-ink-900">Rp{{ number_format($order->total, 0, ',', '.') }}</strong>
+                        </div>
+
+                        @if ($order->isQrisExpired())
+                            <p class="mt-4 rounded-xl bg-amber-50 p-3.5 text-xs text-amber-800">Pesanan ini tidak bisa dibayar lagi. Silakan buat pesanan baru.</p>
+                        @else
+                            <div class="mt-4 flex justify-center rounded-xl border border-brand-200/70 bg-white p-4" role="img" aria-label="Kode QR simulasi untuk pesanan {{ $order->order_number }}">
+                                {!! $order->qrisQrSvg() !!}
+                            </div>
+
+                            <div class="mt-4 rounded-xl border border-dashed border-brand-300 bg-brand-50/50 p-3.5">
+                                <p class="flex items-center gap-1.5 text-[11px] font-semibold text-brand-700">
+                                    <svg class="h-3.5 w-3.5"><use href="#i-bolt"/></svg>
+                                    Mode Demo / Sandbox
+                                </p>
+                                <p class="mt-0.5 text-[11px] text-ink-500">Kode QR ini hanya contoh dan tidak bisa dibayar dengan aplikasi sungguhan. Klik tombol di bawah untuk mensimulasikan pembayaran yang berhasil.</p>
+                                <form method="POST" action="{{ route('orders.simulatePayment', $order) }}" class="mt-2.5"
+                                      onsubmit="return confirm('Simulasikan pembayaran QRIS sebagai BERHASIL? Pesanan akan otomatis ditandai LUNAS.');">
+                                    @csrf
+                                    <button type="submit"
+                                            class="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700">
+                                        <svg class="h-4.5 w-4.5"><use href="#i-check-circle"/></svg>
+                                        Bayar &amp; Tandai Lunas (Simulasi)
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
+                    </div>
+                @elseif (in_array($order->payment_method, ['bank_transfer', 'transfer', 'qris']) && in_array($order->status, ['processing', 'shipped', 'completed']))
+                    {{-- Kartu Sukses Pembayaran VA / QRIS --}}
                     <div class="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50/80 to-white p-5 shadow-card">
                         <div class="flex items-center gap-3">
                             <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
                                 <svg class="h-6 w-6"><use href="#i-check-circle"/></svg>
                             </span>
                             <div>
-                                <h3 class="text-sm font-bold text-emerald-800">Pembayaran Virtual Account Berhasil</h3>
+                                <h3 class="text-sm font-bold text-emerald-800">Pembayaran {{ $order->payment_method === 'qris' ? 'QRIS' : 'Virtual Account' }} Berhasil</h3>
                                 <p class="text-xs text-emerald-700">Pesanan Anda sudah LUNAS dan sedang diproses penjual.</p>
                             </div>
                         </div>
@@ -133,7 +188,7 @@
                             </div>
                             <div>
                                 <dt class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Metode</dt>
-                                <dd class="mt-0.5 font-bold text-ink-800">BCA Virtual Account</dd>
+                                <dd class="mt-0.5 font-bold text-ink-800">{{ $order->payment_method === 'qris' ? 'QRIS' : 'BCA Virtual Account' }}</dd>
                             </div>
                             <div>
                                 <dt class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Nominal Dibayar</dt>
