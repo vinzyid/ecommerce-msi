@@ -241,7 +241,7 @@
             <h3 class="text-xs font-semibold text-ink-900">Pembayaran</h3>
             <p class="mt-4 text-xs leading-relaxed text-ink-500">BCA, Mandiri, BRI, BNI, QRIS, COD</p>
             <h3 class="mt-6 text-xs font-semibold text-ink-900">Pengiriman</h3>
-            <p class="mt-4 text-xs leading-relaxed text-ink-500">JNE Express, SiCepat, J&amp;T, Anteraja</p>
+            <p class="mt-4 text-xs leading-relaxed text-ink-500">JNE Regular, JNE YES</p>
         </div>
     </div>
 

@@ -84,9 +84,10 @@ class AdminTest extends TestCase
 
     public function test_admin_can_search_and_view_users(): void
     {
-        $admin = User::factory()->create(['is_admin' => true, 'username' => 'admin']);
-        $budi = User::factory()->create(['username' => 'budi']);
-        User::factory()->create(['username' => 'sari']);
+        // Email ditulis tetap: email acak bisa memuat "sari" (mis. "rosario@...").
+        $admin = User::factory()->create(['is_admin' => true, 'username' => 'admin', 'email' => 'admin@example.test']);
+        $budi = User::factory()->create(['username' => 'budi', 'email' => 'budi@example.test']);
+        User::factory()->create(['username' => 'sari', 'email' => 'sari@example.test']);
 
         $this->actingAs($admin)->get('/admin/users?q=budi')
             ->assertOk()
