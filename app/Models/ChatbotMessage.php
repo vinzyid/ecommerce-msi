@@ -44,22 +44,15 @@ class ChatbotMessage extends Model
         'rekomendasiin' => 'rekomendasi',
         'saran' => 'rekomendasi',
         'headphone' => 'headset',
-        'earphone' => 'headset',
         'keybord' => 'keyboard',
-        'mousepad' => 'mouse',
-        'miniatur' => 'diecast',
-        'hotwheels' => 'diecast',
         'diecast' => 'diecast',
-        'minigt' => 'diecast',
         'gpu' => 'vga',
         'kartu grafis' => 'vga',
         'ram' => 'ram',
         'konsol' => 'konsol',
         'console' => 'konsol',
-        'kirim' => 'pengiriman',
+        'ongkos kirim' => 'pengiriman',
         'ongkir' => 'pengiriman',
-        'ongkos' => 'pengiriman',
-        'kurir' => 'pengiriman',
         'bayar' => 'pembayaran',
         'beli' => 'beli',
     ];
@@ -72,7 +65,7 @@ class ChatbotMessage extends Model
         'tolong', 'mohon', 'bisa', 'bisakah', 'apakah', 'apa', 'dong', 'ya', 'sih',
         'deh', 'yang', 'ada', 'mau', 'tanya', 'nih', 'yaa', 'aku', 'saya', 'kamu',
         'ini', 'itu', 'nya', 'kah', 'lah', 'pun', 'ke', 'di', 'dan', 'atau', 'untuk',
-        'sama', 'juga', 'saja', 'aja', 'gak', 'tidak', 'engga', 'ngga', 'bgt',
+        'sama', 'juga', 'saja', 'aja', 'bgt',
         'banget', 'kalo', 'kalau', 'dengan', 'pada', 'dari', 'itu',
         'berapa', 'brp', 'brapa', 'berapakah', 'berapaannya',
     ];
@@ -109,7 +102,7 @@ class ChatbotMessage extends Model
     }
 
     /**
-     * Kunci kanonik: pertanyaan mirip menghasilkan kunci yang sama sehingga
+     * Kunci kanonik: variasi penulisan pertanyaan yang sama menghasilkan kunci yang sama sehingga
      * bisa dihitung sebagai cache-hit (green computing) tanpa memanggil AI lagi.
      */
     public static function canonicalKey(string $question): string
@@ -144,8 +137,10 @@ class ChatbotMessage extends Model
             },
         ));
 
-        // Ganti sinonim yang berupa frasa (setelah tokenisasi).
+        // Ganti sinonim yang berupa frasa (setelah tokenisasi), lalu pecah lagi per kata
+        // agar "ps5" dan "playstation 5" terurut sama.
         $tokens = array_map(fn (string $t) => self::SYNONYMS[$t] ?? $t, $tokens);
+        $tokens = preg_split('/\s+/', implode(' ', $tokens), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         // Urutkan agar urutan kata tidak berpengaruh.
         sort($tokens);
@@ -154,49 +149,19 @@ class ChatbotMessage extends Model
     }
 
     /**
-     * Skor kemiripan (0-100) antara pertanyaan ini dengan teks lain
-     * memakai kombinasi token overlap dan similar_text.
-     */
-    public function similarityTo(string $otherQuestion): float
-    {
-        $a = self::tokenSet($this->canonical_key ?: self::canonicalKey($this->question));
-        $b = self::tokenSet(self::canonicalKey($otherQuestion));
-
-        if (empty($a) || empty($b)) {
-            return 0.0;
-        }
-
-        // Hitung token yang sama (irisan)
-        $intersect = count(array_intersect($a, $b));
-        $union = count(array_unique(array_merge($a, $b)));
-        $jaccard = $union > 0 ? $intersect / $union : 0.0;
-
-        // Containment ratio: seberapa banyak kata kunci dari pertanyaan pendek yang ada di pertanyaan panjang
-        $minLen = min(count($a), count($b));
-        $containment = $minLen > 0 ? $intersect / $minLen : 0.0;
-
-        // Bobot: 50% Jaccard + 50% Containment (fokus pada kesamaan kata kunci produk & maksud).
-        $overlapScore = ($jaccard * 0.5 + $containment * 0.5) * 100;
-
-        return $overlapScore;
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private static function tokenSet(?string $canonical): array
-    {
-        $tokens = preg_split('/\s+/', (string) $canonical, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-        return array_values(array_unique($tokens));
-    }
-
-    /**
      * Hash normalisasi pertanyaan — dipakai sebagai kunci unik cache.
      */
     public static function hashQuestion(string $question): string
     {
         return hash('sha256', self::normalizeQuestion($question));
+    }
+
+    /**
+     * Tandai semua jawaban tersimpan sebagai basi (baris tetap ada agar statistik tidak hilang).
+     */
+    public static function expireAll(): void
+    {
+        self::query()->where('expires_at', '>', now())->update(['expires_at' => now()]);
     }
 
     /**

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\ChatbotMessage;
 use App\Models\Product;
+use App\Models\Voucher;
+use App\Support\CartCalculator;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -72,18 +74,14 @@ class ChatbotService
                 ->where('question_hash', $hash)
                 ->first();
 
-            // 2. Jika tidak ada exact hash, cari exact canonical key
+            // 2. Jika tidak ada exact hash, cari exact canonical key.
+            // Sengaja tidak memakai kemiripan parsial: "G304" tidak boleh dijawab dengan cache "G502".
             if (! $cached && filled($canonical)) {
                 $cached = ChatbotMessage::query()
                     ->where('canonical_key', $canonical)
                     ->where('expires_at', '>', now())
                     ->latest('hit_count')
                     ->first();
-            }
-
-            // 3. Jika masih belum ketemu, cari pertanyaan yang sangat mirip (similarity >= 65%)
-            if (! $cached && filled($canonical)) {
-                $cached = $this->findSimilarCachedMessage($question);
             }
         }
 
@@ -95,10 +93,13 @@ class ChatbotService
         }
 
         $messages = $this->buildMessages($question, $conversation, $pageProduct);
-        $answer = $onDelta ? $this->streamAi($messages, $onDelta) : $this->askAi($messages);
+        ['text' => $answer, 'complete' => $complete] = $onDelta
+            ? $this->streamAi($messages, $onDelta)
+            : $this->askAi($messages);
 
-        // Jawaban yang bergantung konteks percakapan/halaman tidak disimpan ke cache bersama.
-        if ($skipCache) {
+        // Cache dipakai bersama semua pengunjung, jadi hanya jawaban yang utuh dan murni dari
+        // pertanyaan yang boleh disimpan. Riwayat dikirim oleh browser sehingga bisa dipalsukan.
+        if (! $complete || ! empty($conversation) || $pageProduct !== null) {
             return $this->result($answer);
         }
 
@@ -179,33 +180,6 @@ class ChatbotService
     }
 
     /**
-     * Cari entri cache yang semantik/intinya sangat mirip (similarity >= 75%)
-     * agar langsung memanfaatkan cache Green Computing.
-     */
-    private function findSimilarCachedMessage(string $question): ?ChatbotMessage
-    {
-        $freshCandidates = ChatbotMessage::query()
-            ->where('expires_at', '>', now())
-            ->whereNotNull('answer')
-            ->latest('id')
-            ->limit(40)
-            ->get();
-
-        $bestCandidate = null;
-        $highestScore = 0.0;
-
-        foreach ($freshCandidates as $candidate) {
-            $score = $candidate->similarityTo($question);
-            if ($score >= 65.0 && $score > $highestScore) {
-                $highestScore = $score;
-                $bestCandidate = $candidate;
-            }
-        }
-
-        return $bestCandidate;
-    }
-
-    /**
      * Deteksi apakah pesan user adalah respon lanjutan pendek yang bergantung pada
      * konteks pesan sebelumnya (misal: "coba bandingkan juga", "iya boleh", "yang mana?").
      */
@@ -262,14 +236,17 @@ class ChatbotService
 
         // Pola yang jelas-jelas bukan urusan toko.
         $blockedPatterns = [
-            // Perhitungan matematika ("3+5", "12 x 8", "100 : 4", "2^8").
-            '/\d\s*[\+\-\*\/\^x×÷:]\s*\d/u',
+            // Pesan yang seluruhnya hitungan ("3+5", "12 x 8", "2^8"). Tanda ":" dan "-" tidak
+            // termasuk karena dipakai juga untuk skala "1:64" dan rentang budget "500-800".
+            '/^\d+(?:\s*[\+\*\/\^x×÷]\s*\d+)+\s*=?\s*\??$/u',
+            // Hitungan yang diminta eksplisit ("hitung 100 : 4", "berapa hasil dari 12 x 8?").
+            '/^(?:berapa(?:\s+hasil(?:nya)?)?|hitung|kalkulasi|hasil)(?:\s+dari)?\s+\d+(?:\s*[\+\-\*\/\^x×÷:]\s*\d+)+\s*=?\s*\??$/u',
             // Pertanyaan hitung eksplisit.
             '/\b(berapa|hitung|hasil dari|kalkulasi)\b.{0,15}\b(kali|bagi|tambah|kurang|pangkat|persen dari)\b/u',
-            // Bantuan tugas sekolah / akademik.
-            '/\b(pr|pekerjaan rumah|tugas sekolah|soal|ujian|ulangan|matematika|fisika|kimia|biologi|sejarah|geografi|bahasa inggris)\b/u',
-            // Coding/programming.
-            '/\b(coding|program|programming|kode|script|javascript|python|php|html|css|sql|function|error syntax|debug)\b/u',
+            // Bantuan tugas sekolah / akademik. "soal" saja berarti "tentang", jadi tidak diblokir.
+            '/\b(pr|pekerjaan rumah|tugas sekolah|(?:kerjakan|kerjain|jawab) soal|ujian|ulangan|matematika|fisika|kimia|biologi|sejarah|geografi|bahasa inggris)\b/u',
+            // Coding/programming. "kode" saja bisa berarti kode region/produk, jadi tidak diblokir.
+            '/\b(coding|program|programming|script|javascript|python|php|html|css|sql|function|error syntax|debug)\b/u',
             // Konten generatif di luar toko.
             '/\b(resep|puisi|pantun|cerpen|esai|artikel|terjemahkan|translate|rangkum|ringkas teks)\b/u',
             // Topik sensitif / umum.
@@ -352,8 +329,9 @@ class ChatbotService
      * Panggil API AI (format OpenAI-compatible) dan tunggu jawaban lengkap.
      *
      * @param  array<int, array{role: string, content: string}>  $messages
+     * @return array{text: string, complete: bool}
      */
-    private function askAi(array $messages): string
+    private function askAi(array $messages): array
     {
         $response = $this->client()
             ->acceptJson()
@@ -374,7 +352,18 @@ class ChatbotService
             throw new RuntimeException('Layanan chatbot tidak mengembalikan jawaban.');
         }
 
-        return trim($answer);
+        return [
+            'text' => trim($answer),
+            'complete' => ! $this->wasCutOff(data_get($response->json(), 'choices.0.finish_reason')),
+        ];
+    }
+
+    /**
+     * Apakah AI berhenti sebelum jawabannya selesai (batas token / filter konten)?
+     */
+    private function wasCutOff(?string $finishReason): bool
+    {
+        return in_array($finishReason, ['length', 'content_filter'], true);
     }
 
     /**
@@ -383,8 +372,9 @@ class ChatbotService
      *
      * @param  array<int, array{role: string, content: string}>  $messages
      * @param  callable(string): void  $onDelta
+     * @return array{text: string, complete: bool}
      */
-    private function streamAi(array $messages, callable $onDelta): string
+    private function streamAi(array $messages, callable $onDelta): array
     {
         $response = $this->client()
             ->withOptions(['stream' => true])
@@ -407,12 +397,17 @@ class ChatbotService
             }
             $onDelta($answer);
 
-            return $answer;
+            return [
+                'text' => $answer,
+                'complete' => ! $this->wasCutOff(data_get($response->json(), 'choices.0.finish_reason')),
+            ];
         }
 
         $body = $response->toPsrResponse()->getBody();
         $buffer = '';
         $answer = '';
+        $finishReason = null;
+        $receivedDone = false;
 
         while (! $body->eof()) {
             $buffer .= $body->read(1024);
@@ -427,10 +422,14 @@ class ChatbotService
 
                 $data = trim(substr($line, 5));
                 if ($data === '[DONE]') {
+                    $receivedDone = true;
                     break 2;
                 }
 
-                $delta = data_get(json_decode($data, true), 'choices.0.delta.content');
+                $chunk = json_decode($data, true);
+                $finishReason = data_get($chunk, 'choices.0.finish_reason') ?? $finishReason;
+
+                $delta = data_get($chunk, 'choices.0.delta.content');
                 if (is_string($delta) && $delta !== '') {
                     $answer .= $delta;
                     $onDelta($delta);
@@ -442,7 +441,11 @@ class ChatbotService
             throw new RuntimeException('Layanan chatbot tidak mengembalikan jawaban.');
         }
 
-        return trim($answer);
+        return [
+            'text' => trim($answer),
+            // Koneksi yang putus di tengah jawaban tidak mengirim [DONE] maupun finish_reason.
+            'complete' => ! $this->wasCutOff($finishReason) && ($receivedDone || $finishReason !== null),
+        ];
     }
 
     /**
@@ -472,6 +475,10 @@ class ChatbotService
         - Harga dalam Rupiah. Tulis seperti "Rp1.289.000".
         - Jika stok 0, sebutkan bahwa stok sedang habis.
         - Jangan memberi janji di luar data (misal ongkir ke luar negeri, garansi khusus) yang tidak tertulis.
+
+        ATURAN INFO BELANJA:
+        - Jawab pertanyaan ongkir, pembayaran, dan voucher HANYA berdasarkan INFO BELANJA di bawah. Jangan mengarang.
+        - Jika informasinya tidak tertulis (misal estimasi tiba, nama kurir, garansi, retur), katakan dengan sopan bahwa kamu belum punya informasi tersebut.
 
         ATURAN MEMORI PERCAKAPAN (SANGAT PENTING — JANGAN LUPA KONTEKS):
         - Kamu HARUS mengingat dan menyambung pembicaraan sebelumnya. Baca riwayat percakapan yang diberikan.
@@ -508,9 +515,47 @@ class ChatbotService
         - Boleh pakai poin-poin singkat bila menyebut beberapa produk.
         - Akhiri dengan ajakan membantu bila relevan.
 
+        INFO BELANJA (per {$this->currentDate()}):
+        {$this->shoppingInfoContext()}
+
         DATA PRODUK (per {$this->currentDate()}):
         {$catalog}
         PROMPT;
+    }
+
+    /**
+     * Aturan ongkir, metode pembayaran, dan voucher aktif sebagai teks konteks untuk AI.
+     * Memakai sumber yang sama dengan checkout agar jawaban AI tidak berbeda dari tagihan.
+     */
+    private function shoppingInfoContext(): string
+    {
+        $rupiah = fn (int $value) => 'Rp'.number_format($value, 0, ',', '.');
+
+        $vouchers = Voucher::query()
+            ->where('is_active', true)
+            ->orderBy('min_spend')
+            ->get()
+            ->filter(fn (Voucher $voucher) => $voucher->isUsable())
+            ->map(function (Voucher $voucher) use ($rupiah) {
+                $value = $voucher->type === 'fixed' ? $rupiah($voucher->value) : "{$voucher->value}%";
+                $maxDiscount = $voucher->max_discount !== null ? " (maks. {$rupiah($voucher->max_discount)})" : '';
+                $expiresAt = $voucher->expires_at ? ", berlaku sampai {$voucher->expires_at->translatedFormat('d F Y')}" : '';
+
+                return "- {$voucher->code}: diskon {$value}{$maxDiscount}, minimal belanja {$rupiah($voucher->min_spend)}{$expiresAt}.";
+            })
+            ->implode("\n");
+
+        return implode("\n", [
+            'Pengiriman:',
+            '- '.CartCalculator::shippingLabel('regular').': '.$rupiah(CartCalculator::SHIPPING_COST)
+                .', gratis ongkir bila total belanja setelah diskon minimal '.$rupiah(CartCalculator::FREE_SHIPPING_MINIMUM).'.',
+            '- '.CartCalculator::shippingLabel('express').': '.$rupiah(CartCalculator::EXPRESS_SHIPPING_COST).', tidak mendapat gratis ongkir.',
+            'Metode pembayaran:',
+            '- Transfer Bank (Virtual Account)',
+            '- Bayar di Tempat (COD)',
+            'Voucher aktif (kode dimasukkan di halaman keranjang atau checkout):',
+            $vouchers !== '' ? $vouchers : '- Belum ada voucher aktif.',
+        ]);
     }
 
     /**

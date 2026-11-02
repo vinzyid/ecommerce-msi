@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ExpiresChatbotCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Voucher extends Model
 {
-    use HasFactory;
+    use ExpiresChatbotCache, HasFactory;
 
     public const TYPES = ['percent', 'fixed'];
 
