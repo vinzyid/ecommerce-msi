@@ -1,6 +1,7 @@
 @php
     $items = [
         ['route' => 'admin.dashboard', 'label' => 'Ringkasan', 'icon' => 'i-chart'],
+        ['route' => 'admin.eis.index', 'match' => 'admin.eis.*', 'label' => 'EIS Eksekutif', 'icon' => 'i-monitor'],
         ['route' => 'admin.products.index', 'match' => 'admin.products.*', 'label' => 'Produk', 'icon' => 'i-box'],
         ['route' => 'admin.categories.index', 'match' => 'admin.categories.*', 'label' => 'Kategori', 'icon' => 'i-layers'],
         ['route' => 'admin.orders.index', 'match' => 'admin.orders.*', 'label' => 'Pesanan', 'icon' => 'i-receipt'],

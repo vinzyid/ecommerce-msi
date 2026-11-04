@@ -108,6 +108,28 @@ return [
             ] : [],
         ],
 
+        // Database kedua: gudang data rekap untuk Executive Information System (EIS).
+        // Kredensial mengikuti database utama kecuali diatur sendiri lewat DB_EIS_*.
+        'eis' => [
+            'driver' => env('DB_EIS_DRIVER', 'pgsql'),
+            'host' => env('DB_EIS_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_EIS_PORT', env('DB_PORT', '5432')),
+            'database' => env('DB_EIS_DATABASE', 'neondb_eis'),
+            'username' => env('DB_EIS_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('DB_EIS_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_EIS_SSLMODE', env('DB_SSLMODE', 'prefer')),
+            'options' => env('DB_EIS_DRIVER', 'pgsql') === 'pgsql' && extension_loaded('pdo_pgsql') ? [
+                PDO::ATTR_PERSISTENT => false,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                // Database kedua yang tidak merespons tidak boleh menahan halaman admin.
+                PDO::ATTR_TIMEOUT => 10,
+            ] : [],
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

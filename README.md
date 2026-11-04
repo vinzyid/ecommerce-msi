@@ -170,6 +170,10 @@ Lalu buat tabel, isi data contoh, dan bangun aset. Seeder utama menolak jalan bi
 
 ```bash
 php artisan migrate --seed
+
+# Database kedua untuk EIS (buat dulu database neondb_eis di server yang sama)
+php artisan migrate --database=eis --path=database/migrations/eis
+php artisan eis:sync
 npm run build
 php artisan serve
 ```

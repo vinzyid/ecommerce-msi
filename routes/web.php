@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\ChatbotController as AdminChatbotController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EisController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -127,6 +128,9 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
+    Route::get('/eis', [EisController::class, 'index'])->name('eis.index');
+    Route::post('/eis/sync', [EisController::class, 'sync'])->middleware('throttle:10,1')->name('eis.sync');
+    Route::get('/eis/{period}', [EisController::class, 'show'])->where('period', '\d{4}-\d{2}')->name('eis.show');
     Route::resource('categories', AdminCategoryController::class)->only(['index', 'create', 'store', 'edit', 'update']);
     Route::resource('products', AdminProductController::class)->only(['index', 'create', 'store', 'edit', 'update']);
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
