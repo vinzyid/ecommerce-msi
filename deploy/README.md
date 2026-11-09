@@ -71,9 +71,14 @@ dan menunggu sampai situs merespons.
 | Status            | `docker compose ps`                              |
 | Artisan           | `docker compose exec web php artisan <perintah>` |
 | Restart           | `docker compose restart`                         |
+| **Habis ubah `.env.production`** | `docker compose up -d --force-recreate` |
 | Seed data awal    | `docker compose exec web php artisan db:seed`    |
 
 ## Pemecahan masalah
+
+**Perubahan `.env.production` tidak berpengaruh** — `docker compose restart` tidak membaca ulang berkas env. Jalankan `docker compose up -d --force-recreate` (atau `./deploy.sh`).
+
+**Tombol "Masuk dengan Google" tidak muncul** — `GOOGLE_CLIENT_ID` di `.env.production` masih kosong, atau sudah diisi tapi container belum dibuat ulang (lihat poin di atas).
 
 **HTTPS gagal / sertifikat tidak terbit** — pastikan A record sudah benar (`dig +short vinzyplay.my.id`), lalu lihat `sudo journalctl -u caddy -n 50 --no-pager`.
 
