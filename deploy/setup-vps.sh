@@ -86,13 +86,30 @@ else
   ok "Caddyfile utama sudah mengimpor sites/"
 fi
 
-if $SUDO caddy validate --config "$MAIN_CADDY" --adapter caddyfile >/dev/null 2>&1; then
-  $SUDO systemctl reload caddy 2>/dev/null || $SUDO systemctl restart caddy
-  ok "Caddy dimuat ulang (situs lain tetap jalan)"
-else
-  $SUDO caddy validate --config "$MAIN_CADDY" --adapter caddyfile || true
+# Validasi dijalankan sebagai user "caddy". Kalau dijalankan sebagai root, caddy
+# validate ikut membuat berkas log milik root, lalu layanan Caddy (user caddy)
+# gagal start karena "permission denied" dan SEMUA situs di VPS ikut mati.
+CADDY_AS="$SUDO -u caddy"
+id caddy >/dev/null 2>&1 || CADDY_AS="$SUDO"
+if ! $CADDY_AS caddy validate --config "$MAIN_CADDY" --adapter caddyfile >/dev/null 2>&1; then
+  $CADDY_AS caddy validate --config "$MAIN_CADDY" --adapter caddyfile || true
+  $SUDO chown -R caddy:caddy /var/log/caddy 2>/dev/null || true
   die "Konfigurasi Caddy tidak valid; Caddy TIDAK dimuat ulang. Periksa pesan di atas."
 fi
+# Jaga-jaga bila ada berkas log lama milik root.
+$SUDO chown -R caddy:caddy /var/log/caddy 2>/dev/null || true
+
+if systemctl is-active --quiet caddy; then
+  $SUDO systemctl reload caddy
+else
+  $SUDO systemctl restart caddy
+fi
+sleep 2
+systemctl is-active --quiet caddy || {
+  $SUDO journalctl -u caddy -n 20 --no-pager || true
+  die "Caddy gagal jalan. Lihat log di atas."
+}
+ok "Caddy aktif dengan konfigurasi baru (situs lain tetap jalan)"
 
 # --- 5. .env.production ----------------------------------------------------
 ENV_FILE="$APP_DIR/.env.production"
