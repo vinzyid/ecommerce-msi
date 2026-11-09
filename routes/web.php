@@ -117,6 +117,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('/orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+    Route::post('/orders/{order}/invoice/email', [OrderController::class, 'emailInvoice'])
+        ->middleware('throttle:3,1')
+        ->name('orders.invoice.email');
     Route::get('/orders/{order}/pembayaran-berhasil', [OrderController::class, 'paid'])->name('orders.paid');
     Route::post('/orders/{order}/reviews', [ReviewController::class, 'storeForOrder'])->name('orders.reviews.store');
     Route::post('/orders/{order}/reorder', [OrderController::class, 'reorder'])->name('orders.reorder');

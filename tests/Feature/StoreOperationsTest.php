@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\CartItem;
 use App\Notifications\OrderPlaced;
+use App\Notifications\OrderReceipt;
 use App\Notifications\OrderStatusChanged;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoReviewSeeder;
@@ -19,6 +20,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -297,6 +299,76 @@ class StoreOperationsTest extends TestCase
         Notification::assertSentTo($user, OrderStatusChanged::class, fn ($n) => str_contains($n->toMail($user)->subject, 'dibatalkan'));
     }
 
+    public function test_receipt_is_emailed_when_online_payment_succeeds(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+        $order = $this->order($user, $this->product(), ['payment_method' => 'qris']);
+
+        $this->actingAs($user)->post(route('orders.simulatePayment', $order));
+
+        Notification::assertSentTo($user, OrderReceipt::class, fn ($n) => str_contains($n->toMail($user)->subject, $order->order_number));
+        Notification::assertNotSentTo($user, OrderStatusChanged::class);
+    }
+
+    public function test_cod_receipt_is_emailed_only_when_order_is_completed(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+        $order = $this->order($user, $this->product());
+
+        $this->actingAs($user)->post(route('orders.simulatePayment', $order));
+        $this->actingAs($user)->post(route('orders.simulateShip', $order));
+        Notification::assertNotSentTo($user, OrderReceipt::class);
+
+        $this->actingAs($user)->post(route('orders.complete', $order));
+        Notification::assertSentTo($user, OrderReceipt::class);
+    }
+
+    public function test_customer_and_admin_can_email_invoice_but_others_cannot(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+        $order = $this->order($user, $this->product());
+
+        $this->actingAs($user)->post(route('orders.invoice.email', $order))->assertSessionHas('success');
+        $this->actingAs(User::factory()->create(['is_admin' => true]))->post(route('orders.invoice.email', $order))->assertSessionHas('success');
+        Notification::assertSentToTimes($user, OrderReceipt::class, 2);
+
+        $this->actingAs(User::factory()->create())->post(route('orders.invoice.email', $order))->assertForbidden();
+    }
+
+    public function test_receipt_email_renders_order_details_and_logo(): void
+    {
+        Mail::fake();
+        $user = User::factory()->create();
+        $order = $this->order($user, $this->product(), ['payment_method' => 'qris', 'status' => 'processing']);
+
+        $mail = (new OrderReceipt($order))->toMail($user);
+        $html = (string) $mail->render();
+
+        $this->assertCount(1, $mail->rawAttachments);
+        $this->assertSame("Struk-{$order->order_number}.pdf", $mail->rawAttachments[0]['name']);
+        $this->assertStringStartsWith('%PDF', $mail->rawAttachments[0]['data']);
+
+        $this->assertStringContainsString($order->order_number, $html);
+        $this->assertStringContainsString('Produk Uji', $html);
+        $this->assertStringContainsString('Rp115.000', $html);
+        $this->assertStringContainsString('Lunas', $html);
+        $this->assertFileExists(public_path('images/logo-email.png'));
+    }
+
+    public function test_invoice_page_shows_logo_and_email_button(): void
+    {
+        $user = User::factory()->create();
+        $order = $this->order($user, $this->product());
+
+        $this->actingAs($user)->get(route('orders.invoice', $order))
+            ->assertOk()
+            ->assertSee('VinzyPlay')
+            ->assertSee(route('orders.invoice.email', $order));
+    }
+
     public function test_voucher_per_user_limit_blocks_reuse_until_order_is_cancelled(): void
     {
         $user = User::factory()->create();
@@ -441,7 +513,7 @@ class StoreOperationsTest extends TestCase
 
         $this->actingAs($user)->get('/orders')
             ->assertSee('ETL-MENUNGGU')->assertSee('ETL-SELESAI')->assertDontSee('ETL-ORANGLAIN')
-            ->assertViewHas('counts', fn ($counts) => (int) $counts['pending'] === 1 && (int) $counts['completed'] === 1);
+            ->assertViewHas('counts', fn ($counts) => (string) $counts['pending'] === '1' && (string) $counts['completed'] === '1');
 
         $this->actingAs($user)->get('/orders?status=completed')->assertSee('ETL-SELESAI')->assertDontSee('ETL-MENUNGGU');
         $this->actingAs($user)->get('/orders?status=shipped')->assertSee('Pesanan tidak ditemukan');
@@ -661,7 +733,7 @@ class StoreOperationsTest extends TestCase
         $this->actingAs($user)->get('/account')
             ->assertSee('Pesanan Saya')
             ->assertSee(route('orders.index', ['status' => 'shipped']), false)
-            ->assertViewHas('orderCounts', fn ($counts) => (int) $counts['pending'] === 2);
+            ->assertViewHas('orderCounts', fn ($counts) => (string) $counts['pending'] === '2');
     }
 
     public function test_product_page_shows_store_card_and_products_from_other_categories(): void

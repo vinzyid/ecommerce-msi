@@ -28,7 +28,7 @@ class AccountController extends Controller
             'spent' => (int) $user->orders()->where('status', '!=', 'cancelled')->sum('total'),
         ];
 
-        $orderCounts = $user->orders()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $orderCounts = $user->orders()->selectRaw('status, count(*) as aggregate')->groupBy('status')->pluck('aggregate', 'status');
 
         $cartCount = (int) $user->cartItems()->sum('quantity');
         $wishlistCount = (int) $user->wishlists()->count();

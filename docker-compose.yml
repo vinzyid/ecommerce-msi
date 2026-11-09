@@ -1,0 +1,70 @@
+# Docker Compose VinzyPlay.
+#
+# Di VPS: container web mendengarkan 127.0.0.1:8081, lalu Caddy di host meneruskan
+# https://vinzyplay.my.id ke sana. Port 8080 sudah dipakai aplikasi lain di VPS, jadi jangan diubah ke 8080.
+#
+# Tiga container dari image yang sama:
+#   web       -> situs (FrankenPHP)
+#   queue     -> mengirim email/notifikasi di antrean (QUEUE_CONNECTION=database)
+#   scheduler -> jadwal eis:sync tiap jam
+#
+# Data utama ada di Neon (cloud). Yang disimpan di VPS hanya volume berikut:
+#   storage  -> sesi login, cache, log
+#   uploads  -> foto produk yang diunggah admin
+#   reviews  -> foto ulasan pembeli
+
+x-app: &app
+  image: vinzyplay:latest
+  restart: unless-stopped
+  env_file:
+    - .env.production
+  volumes:
+    - storage:/app/storage
+    - uploads:/app/public/images/products/uploads
+    - reviews:/app/public/images/reviews
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  web:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vinzyplay-web
+    environment:
+      PORT: "8080"
+    ports:
+      - "127.0.0.1:8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  queue:
+    <<: *app
+    container_name: vinzyplay-queue
+    pull_policy: never
+    command: ["php", "artisan", "queue:work", "--tries=3", "--backoff=10", "--max-time=3600", "--sleep=3"]
+    depends_on:
+      web:
+        condition: service_healthy
+
+  scheduler:
+    <<: *app
+    container_name: vinzyplay-scheduler
+    pull_policy: never
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  storage:
+  uploads:
+  reviews:

@@ -22,17 +22,33 @@
     <div class="mx-auto max-w-3xl px-4 py-6 print:max-w-none print:p-0">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
             <a href="{{ route('orders.show', $order) }}" class="text-sm font-medium text-ink-600 hover:text-ink-900">&larr; Kembali ke pesanan</a>
-            <button type="button" onclick="window.print()"
-                    class="rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-ink-700">
-                Cetak / Simpan PDF
-            </button>
+            <div class="flex flex-wrap items-center gap-2">
+                <form method="POST" action="{{ route('orders.invoice.email', $order) }}">
+                    @csrf
+                    <button type="submit"
+                            class="rounded-full border border-ink-200 bg-white px-5 py-2.5 text-sm font-medium text-ink-800 hover:border-ink-900">
+                        Kirim ke Email
+                    </button>
+                </form>
+                <button type="button" onclick="window.print()"
+                        class="rounded-full bg-ink-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-ink-700">
+                    Cetak / Simpan PDF
+                </button>
+            </div>
         </div>
+
+        @if (session('success'))
+            <p class="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800 print:hidden" role="status">{{ session('success') }}</p>
+        @endif
+        @if ($errors->has('invoice'))
+            <p class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 print:hidden" role="alert">{{ $errors->first('invoice') }}</p>
+        @endif
 
         <main class="rounded-2xl border border-ink-100 bg-white p-6 sm:p-8 print:rounded-none print:border-0 print:p-0">
             <header class="flex flex-wrap items-start justify-between gap-4 border-b border-ink-100 pb-5">
                 <div>
-                    <p class="text-lg font-semibold text-ink-900">{{ config('app.name') }}</p>
-                    <p class="mt-0.5 text-xs text-ink-500">Gaming, diecast &amp; hobi</p>
+                    <x-logo class="[&>svg]:h-10 [&>svg]:w-10 [&>span]:text-xl" />
+                    <p class="mt-1.5 text-xs text-ink-500">Gaming, diecast &amp; hobi</p>
                 </div>
                 <div class="text-right">
                     <h1 class="text-2xl font-semibold tracking-tight text-ink-900">INVOICE</h1>

@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Di produksi aplikasi berada di belakang Caddy. Port container hanya dibuka ke
+        // 127.0.0.1, jadi satu-satunya proxy yang bisa menjangkaunya adalah Caddy di host.
+        // Tanpa ini Laravel mengira request-nya HTTP dan membuat link http://.
+        $middleware->trustProxies(at: '*');
         $middleware->append(AddSecurityHeaders::class);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\OrderReceipt;
 use App\Notifications\OrderStatusChanged;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -11,6 +12,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Throwable;
@@ -51,19 +53,36 @@ class Order extends Model
     protected static function booted(): void
     {
         static::updated(function (Order $order) {
-            if ($order->wasChanged('status') && in_array($order->status, ['processing', 'shipped', 'cancelled'], true)) {
-                DB::afterCommit(fn () => $order->notifyCustomer());
+            if (! $order->wasChanged('status')) {
+                return;
+            }
+
+            // Begitu pembayaran lunas, struk langsung dikirim (menggantikan email "sedang diproses").
+            if ($order->justPaid()) {
+                DB::afterCommit(fn () => $order->notifyCustomer(new OrderReceipt($order)));
+            } elseif (in_array($order->status, ['processing', 'shipped', 'cancelled'], true)) {
+                DB::afterCommit(fn () => $order->notifyCustomer(new OrderStatusChanged($order)));
             }
         });
     }
 
     /**
+     * Transfer/QRIS lunas saat masuk "processing"; COD lunas saat pesanan selesai diterima.
+     */
+    private function justPaid(): bool
+    {
+        return $this->payment_method === 'cod'
+            ? $this->status === 'completed'
+            : $this->status === 'processing' && $this->getOriginal('status') === 'pending';
+    }
+
+    /**
      * Email yang gagal terkirim tidak boleh menggagalkan perubahan status.
      */
-    private function notifyCustomer(): void
+    private function notifyCustomer(Notification $notification): void
     {
         try {
-            $this->user?->notify(new OrderStatusChanged($this));
+            $this->user?->notify($notification);
         } catch (Throwable $e) {
             report($e);
         }

@@ -1,0 +1,39 @@
+# Caddy site VinzyPlay — reverse proxy + HTTPS otomatis.
+#
+# Berkas ini TIDAK menimpa /etc/caddy/Caddyfile yang sudah ada. setup-vps.sh
+# menyalinnya ke /etc/caddy/sites/vinzyplay.caddy, lalu menambahkan baris
+#   import sites/*.caddy
+# ke Caddyfile utama, jadi situs lain di VPS yang sama tetap berjalan.
+#
+# DOMAIN_VINZYPLAY diganti otomatis oleh setup-vps.sh.
+
+DOMAIN_VINZYPLAY {
+	reverse_proxy 127.0.0.1:8081 {
+		header_up X-Real-IP {remote_host}
+	}
+
+	# Satu form ulasan bisa membawa beberapa foto (masing-masing maks 2 MB).
+	request_body {
+		max_size 25MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+		-X-Powered-By
+	}
+
+	encode gzip zstd
+
+	log {
+		output file /var/log/caddy/vinzyplay.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}
+
+# www diarahkan ke domain utama supaya login & sesi selalu di satu alamat.
+www.DOMAIN_VINZYPLAY {
+	redir https://DOMAIN_VINZYPLAY{uri} permanent
+}

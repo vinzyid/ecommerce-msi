@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Notifications\OrderReceipt;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class OrderController extends Controller
 {
@@ -34,7 +36,7 @@ class OrderController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $counts = $user->orders()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $counts = $user->orders()->selectRaw('status, count(*) as aggregate')->groupBy('status')->pluck('aggregate', 'status');
         $reviews = $user->reviews()
             ->whereIn('product_id', $orders->getCollection()->flatMap->items->pluck('product_id')->filter()->unique())
             ->get()
@@ -97,6 +99,29 @@ class OrderController extends Controller
         $order->load('items');
 
         return view('orders.invoice', compact('order'));
+    }
+
+    /**
+     * Kirim struk pesanan ke email pembeli (juga bisa dipicu admin dari halaman invoice).
+     */
+    public function emailInvoice(Request $request, Order $order): \Illuminate\Http\RedirectResponse
+    {
+        abort_unless($order->user_id === $request->user()->id || $request->user()->is_admin, 403);
+
+        $buyer = $order->user;
+        if (! $buyer?->email) {
+            return back()->withErrors(['invoice' => 'Pembeli pesanan ini tidak punya alamat email.']);
+        }
+
+        try {
+            $buyer->notify(new OrderReceipt($order));
+        } catch (Throwable $e) {
+            report($e);
+
+            return back()->withErrors(['invoice' => 'Struk gagal dikirim. Coba lagi beberapa saat lagi.']);
+        }
+
+        return back()->with('success', "Struk sudah dikirim ke {$buyer->email}.");
     }
 
     /**
