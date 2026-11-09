@@ -192,7 +192,7 @@
             ['i-shield', '100% original', 'Garansi resmi distributor & brand.'],
             ['i-truck', 'Gratis ongkir', 'Untuk belanja min. Rp300.000.'],
             ['i-refresh', 'Retur 7 hari', 'Barang rusak atau salah bisa diajukan untuk diganti.'],
-            ['i-headset', 'Asisten toko', 'Tanya harga, stok, dan cara belanja lewat chat.'],
+            ['i-vinzybot', 'Asisten toko', 'Tanya harga, stok, dan cara belanja lewat chat.'],
         ] as [$icon, $title, $desc])
             <div class="flex items-start gap-3">
                 <svg class="mt-0.5 h-5 w-5 shrink-0 text-ink-900" aria-hidden="true"><use href="#{{ $icon }}"/></svg>

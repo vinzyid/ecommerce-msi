@@ -182,7 +182,7 @@
         <div class="flex flex-wrap gap-2">
             <button type="button" onclick="const toggle = document.querySelector('[data-chatbot-toggle]'); if (toggle?.getAttribute('aria-expanded') !== 'true') toggle?.click();"
                     class="inline-flex items-center gap-2 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-white hover:bg-ink-700">
-                <svg class="h-4 w-4" aria-hidden="true"><use href="#i-headset"/></svg>
+                <svg class="h-4 w-4" aria-hidden="true"><use href="#i-vinzybot"/></svg>
                 Chat Toko
             </button>
             <a href="{{ route('home') }}" class="rounded-full border border-ink-200 px-4 py-2 text-sm font-medium text-ink-800 hover:border-ink-900">Kunjungi Toko</a>

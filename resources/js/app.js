@@ -637,7 +637,16 @@ function initChatbot() {
 
     const botAvatar =
         '<span class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ink-900 text-white">' +
-        '<svg class="h-4 w-4" aria-hidden="true"><use href="#i-headset"/></svg></span>';
+        '<svg class="h-4 w-4" aria-hidden="true"><use href="#i-vinzybot"/></svg></span>';
+
+    // Status bergilir saat menunggu: jawaban AI bisa butuh beberapa detik, jadi
+    // pengguna diberi tahu bahwa asisten masih bekerja, bukan macet.
+    const typingSteps = [
+        [0, 'Asisten sedang mengetik'],
+        [2500, 'Mencari info produk'],
+        [6000, 'Menyusun jawaban terbaik'],
+        [12000, 'Sebentar lagi ya'],
+    ];
 
     const userBubble = (text, ts) => {
         const wrap = document.createElement('div');
@@ -672,14 +681,36 @@ function initChatbot() {
 
     const typingIndicator = () => {
         const wrap = document.createElement('div');
-        wrap.className = 'flex gap-2';
-        wrap.setAttribute('aria-label', 'Asisten sedang mengetik');
+        wrap.className = 'chatbot-thinking flex gap-2';
+        wrap.setAttribute('role', 'status');
         wrap.innerHTML =
-            botAvatar +
+            '<span class="chatbot-thinking-avatar mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ink-900 text-white">' +
+            '<svg class="h-4 w-4" aria-hidden="true"><use href="#i-vinzybot"/></svg></span>' +
+            '<div class="flex flex-col items-start gap-1">' +
             '<div class="chatbot-typing flex items-center gap-1 rounded-2xl rounded-tl-md bg-ink-50 px-3.5 py-3">' +
-            '<span></span><span></span><span></span></div>';
+            '<span></span><span></span><span></span></div>' +
+            `<span data-typing-label class="chatbot-typing-label text-[11px] text-ink-400">${typingSteps[0][1]}…</span>` +
+            '</div>';
         messages.appendChild(wrap);
         scrollToEnd(true);
+
+        const label = wrap.querySelector('[data-typing-label]');
+        const timers = typingSteps.slice(1).map(([delay, text]) =>
+            setTimeout(() => {
+                if (!wrap.isConnected) return;
+                label.classList.remove('is-swapping');
+                label.offsetWidth; // ulang animasi masuk
+                label.textContent = `${text}…`;
+                label.classList.add('is-swapping');
+                scrollToEnd();
+            }, delay),
+        );
+        // Hentikan timer begitu indikator dibuang dari DOM.
+        const remove = wrap.remove.bind(wrap);
+        wrap.remove = () => {
+            timers.forEach(clearTimeout);
+            remove();
+        };
         return wrap;
     };
 

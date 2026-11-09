@@ -53,7 +53,7 @@
             <div class="relative flex items-center justify-between gap-3">
                 <div class="flex min-w-0 items-center gap-2.5">
                     <span class="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink-900 text-white">
-                        <svg class="h-5 w-5" aria-hidden="true"><use href="#i-headset"/></svg>
+                        <svg class="h-5 w-5" aria-hidden="true"><use href="#i-vinzybot"/></svg>
                         <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-success-500"></span>
                     </span>
                     <div class="min-w-0 leading-tight">
@@ -94,7 +94,7 @@
             <!-- Pesan sambutan + saran (saran otomatis hilang setelah percakapan dimulai) -->
             <div class="flex gap-2" data-chatbot-welcome>
                 <span class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ink-900 text-white">
-                    <svg class="h-4 w-4" aria-hidden="true"><use href="#i-headset"/></svg>
+                    <svg class="h-4 w-4" aria-hidden="true"><use href="#i-vinzybot"/></svg>
                 </span>
                 <div class="min-w-0 max-w-[85%]">
                     <div class="rounded-2xl rounded-tl-md bg-ink-50 px-3.5 py-2.5 text-ink-800">
@@ -142,7 +142,7 @@
         <button type="button" data-chatbot-toggle aria-expanded="false"
                 class="relative grid h-14 w-14 shrink-0 place-items-center rounded-full bg-ink-900 text-white shadow-lift transition-[scale,background-color,opacity] duration-160 ease-(--ease-out) hover:scale-105 hover:bg-ink-700 active:scale-95"
                 aria-label="Buka asisten chat">
-            <svg class="h-6 w-6" data-chatbot-icon-open aria-hidden="true"><use href="#i-headset"/></svg>
+            <svg class="h-6 w-6" data-chatbot-icon-open aria-hidden="true"><use href="#i-vinzybot"/></svg>
             <svg class="hidden h-6 w-6" data-chatbot-icon-close aria-hidden="true"><use href="#i-close"/></svg>
             <span class="absolute right-0.5 top-0.5 flex h-3 w-3">
                 {{-- Kedip hanya untuk pengunjung yang belum pernah membuka chat --}}

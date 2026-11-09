@@ -403,7 +403,7 @@
                 <section class="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
                     <div class="flex items-center gap-3">
                         <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                            <svg class="h-5 w-5"><use href="#i-headset"/></svg>
+                            <svg class="h-5 w-5"><use href="#i-vinzybot"/></svg>
                         </span>
                         <div>
                             <h2 class="text-sm font-bold text-ink-900">Butuh bantuan?</h2>

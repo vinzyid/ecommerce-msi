@@ -266,7 +266,7 @@
                 ['i-truck', 'Pengiriman Cepat', 'Reguler dan kilat'],
                 ['i-credit-card', 'Pembayaran Aman', 'QRIS, transfer bank, COD'],
                 ['i-refresh', 'Garansi Produk', '7 hari pengembalian'],
-                ['i-headset', 'Asisten Toko', 'Tanya lewat chat'],
+                ['i-vinzybot', 'Asisten Toko', 'Tanya lewat chat'],
             ] as [$icon, $title, $desc])
                 <div class="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 shadow-card">
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
