@@ -178,6 +178,17 @@
 }
 
 /* ---------- Chatbot ---------- */
+/* Panel yang tertutup hanya disembunyikan, tapi kotaknya tetap memakan ruang ~390x650px
+   di pojok kanan bawah. Tanpa ini wadahnya menelan klik dan menutupi isi halaman
+   (mis. kolom kode voucher di keranjang). Hanya tombol & panel yang terbuka yang bisa diklik. */
+[data-chatbot] {
+    pointer-events: none;
+}
+
+[data-chatbot-launcher] {
+    pointer-events: auto;
+}
+
 [data-chatbot-panel] {
     opacity: 0;
     translate: 0 8px;
