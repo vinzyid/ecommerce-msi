@@ -50,6 +50,9 @@ services:
     <<: *app
     container_name: vinzyplay-queue
     pull_policy: never
+    # Worker tidak melayani HTTP; matikan health check web bawaan image FrankenPHP.
+    healthcheck:
+      disable: true
     command: ["php", "artisan", "queue:work", "--tries=3", "--backoff=10", "--max-time=3600", "--sleep=3"]
     depends_on:
       web:
@@ -59,6 +62,9 @@ services:
     <<: *app
     container_name: vinzyplay-scheduler
     pull_policy: never
+    # Worker tidak melayani HTTP; matikan health check web bawaan image FrankenPHP.
+    healthcheck:
+      disable: true
     command: ["php", "artisan", "schedule:work"]
     depends_on:
       web:
