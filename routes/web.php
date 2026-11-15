@@ -100,7 +100,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/cart/{cartItem}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{cartItem}', [CartController::class, 'destroy'])->name('cart.destroy');
 
-    Route::post('/voucher', [VoucherController::class, 'apply'])->name('voucher.apply');
+    Route::post('/voucher', [VoucherController::class, 'apply'])->middleware('throttle:10,1')->name('voucher.apply');
     Route::delete('/voucher', [VoucherController::class, 'remove'])->name('voucher.remove');
 
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');

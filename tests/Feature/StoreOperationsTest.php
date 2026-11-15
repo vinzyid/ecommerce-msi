@@ -266,7 +266,32 @@ class StoreOperationsTest extends TestCase
         $this->get('/tentang')
             ->assertHeader('X-Content-Type-Options', 'nosniff')
             ->assertHeader('X-Frame-Options', 'SAMEORIGIN')
-            ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+            ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+            ->assertHeader('Cross-Origin-Opener-Policy', 'same-origin')
+            ->assertHeader('X-Permitted-Cross-Domain-Policies', 'none')
+            ->assertHeader('Permissions-Policy')
+            ->assertHeader('Content-Security-Policy');
+    }
+
+    public function test_content_security_policy_restricts_sources(): void
+    {
+        $csp = $this->get('/')->headers->get('Content-Security-Policy');
+
+        $this->assertStringContainsString("default-src 'self'", $csp);
+        $this->assertStringContainsString("object-src 'none'", $csp);
+        $this->assertStringContainsString("frame-ancestors 'self'", $csp);
+        $this->assertStringContainsString('https://fonts.googleapis.com', $csp);
+    }
+
+    public function test_voucher_apply_is_rate_limited(): void
+    {
+        $user = User::factory()->create();
+
+        foreach (range(1, 10) as $i) {
+            $this->actingAs($user)->post('/voucher', ['code' => 'TIDAKADA'.$i]);
+        }
+
+        $this->actingAs($user)->post('/voucher', ['code' => 'TIDAKADA'])->assertStatus(429);
     }
 
     public function test_customer_gets_email_when_order_status_changes(): void

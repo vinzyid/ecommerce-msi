@@ -23,6 +23,9 @@ storage/framework/views/
 storage/app/
 bootstrap/cache/*.php
 
+# Khusus Apache; FrankenPHP tidak memakainya dan berkas ini bisa dibaca publik.
+public/.htaccess
+
 # Unggahan pengguna disimpan di volume, bukan di image.
 public/images/products/uploads/
 public/images/reviews/
